@@ -6,7 +6,7 @@ except ImportError:
     import tkinter as tk
 
 import pandas
-
+import numpy as np
 
 def getDatabaseList(host='localhost',user='root', password=None):
     connection = pymysql.connect(host=host,user=user)
@@ -121,6 +121,28 @@ def addStemsFromNotes(df):
 
     return pandas.concat( (df, mstems_df) ,axis=1 )
 
+
+def get_ctfs_col_info():
+    data = {'dbh': 'Diameter of the stem.', 
+        'substrate': 'Describes the ground surface where tree is planted', 
+        'pom': 'The point-of-measure, where the diameter was taken, identical to hom, but a character variable with only 2 decimal places.', 
+        'ExactDate': 'The date on which the stem was measured.', 
+        'notes': 'A column of field notes.', 
+        'sp': 'The species mnemonic. This mnemonic is crucial in joining various databases.', 
+        'slp': 'standng, leaning, or prone (S,L, or P)',
+        'pig_damage': 'column describing the pig damage (Typically 0,1,2, or 3 depending on the level of damage, 3 being worst)',
+        'RawStatus': 'status of the tree, alive, dead, new, etc',
+        'nostems': 'The number of living stems on the date of measurement.', 
+        'tag': 'Tag number used in the field.', 
+        'x': 'The x coordinate within the plot.', 
+        'y': 'The y coordinate within the plot.', 
+        'quadrat': 'Quadrat designation', 
+        'subquad': 'Subquad within the quadrat (if applicable)', 
+        'dist_to_nail': 'Distance from the nail to the measuring point as efined in the HIPPNET manual.'}
+
+    return np.array( data.items() )
+
+
 class ScrollList(tk.Frame):
     def __init__(self, master, *args, **kwargs):
         tk.Frame.__init__(self,master,*args, **kwargs)
@@ -162,6 +184,4 @@ class ScrollList(tk.Frame):
         else:
             return None
 
-
-        
 

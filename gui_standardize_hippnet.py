@@ -129,11 +129,7 @@ class App:
             return True 
 
     def loadCTFS_standard(self):
-        data = np.loadtxt( 
-              '/Users/mender/HIPPNET/hippnet/CTFS_tree_column_info.txt', 
-              dtype=str,
-              delimiter='\t',
-              comments='skjdfsakdhfashdfjkhsajdhfkasdfsa' )
+        data = helper.get_ctfs_col_info()
         self.ctfs_names = data[:,0]
         self.col_descr  = data[:,1]
 
