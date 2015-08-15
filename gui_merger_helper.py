@@ -150,7 +150,7 @@ class Merge:
  
         self.plot_name = os.path.join( output_dir, output_prefix)
         try: 
-            self.writer = pandas.ExcelWriter('%s_report.xlsx'%plot_name)
+            self.writer = pandas.ExcelWriter('%s_report.xlsx'%self.plot_name)
         except ImportError:
             self.writer = None
 
@@ -420,14 +420,14 @@ class Merge:
         self.tidy_data = self.tidy_data.sort_index(by=['treeID','CensusID'])
 
     def _save_everything(self):
-        self.tidy_data.to_csv('%s_master.txt'%plot_name, sep='\t', na_rep='NA', float_format='%.2f')
+        self.tidy_data.to_csv('%s_master.txt'%self.plot_name, sep='\t', na_rep='NA', float_format='%.2f')
         if self.writer:
             self.writer.save()
         if self.make_pkl:
-            self.tidy_data.to_pickle('%s_stacked.pkl'%plot_name)
+            self.tidy_data.to_pickle('%s_stacked.pkl'%self.plot_name)
         if self.make_beauty:
             beautiful_data = self.tidy_data.groupby(('treeID','CensusID','mstem')).first()
-            beautiful_data.to_excel( '%s_beauty.xlsx'%plot_name, na_rep='NA', float_format='%.2f')
+            beautiful_data.to_excel( '%s_beauty.xlsx'%self.plot_name, na_rep='NA', float_format='%.2f')
 
 
 if __name__ == '__main__':

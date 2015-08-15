@@ -250,7 +250,7 @@ class App:
             tk.Label( self.cornerFrame , text='Plot name:',background='darkgreen',foreground='white', 
                         font='BOLD',relief=tk.RIDGE).grid(row=0,column=0)
             self.cornerVar = tk.StringVar()
-            tk.OptionMenu(self.cornerFrame, self.cornerVar,  *[ 'Palamanui', 'Laupahoehoe' ] ).grid( row=0, column=1 ) 
+            tk.OptionMenu(self.cornerFrame, self.cornerVar,  *[ 'Palamanui', 'Laupahoehoe', 'Sanctuary', 'Mamalahoa' ] ).grid( row=0, column=1 ) 
             def getCornersList():
                 if self.cornerVar.get() == 'Palamanui':
                     self.censusx0000 = 185950.006
@@ -258,6 +258,12 @@ class App:
                 elif self.cornerVar.get() == 'Laupahoehoe':
                     self.censusx0000 = 260420.001
                     self.censusy0000 = 2205378.002
+                elif self.cornerVar.get() == 'Sanctuary':
+                    self.censusx0000 = 198451.
+                    self.censusy0000 = 2183419.
+                elif self.cornerVar.get() == 'Mamalahoa':
+                    self.censusx0000 = 201314.
+                    self.censusy0000 = 2192168.
                 self.Text_PlotCorner= "x= %.2f; y=%.2f"%(self.censusx0000, self.censusy0000)
                 self.PlotCornerSet['done'] = True
                 self._layout()
@@ -296,24 +302,24 @@ class App:
         # initialize each match as "missing"
         self.matches = [ tk.StringVar() for c in self.ctfs_names ]
         for i,c in enumerate( self.ctfs_names) : # in self.matches:
-            if c == 'tag':
-                self.matches[i].set('RE_TAG')
-            elif c== 'sp':
-                self.matches[i].set('SPECIES')
-            elif c== 'x':
-                self.matches[i].set('x')
-            elif c== 'y':
-                self.matches[i].set('y')
-            elif c== 'dbh':
-                self.matches[i].set('DBH_2011')
-            elif c== 'ExactDate':
-                self.matches[i].set('RE_DATE')
-            elif c== 'RawStatus':
-                self.matches[i].set('RE_STATUS')
-            elif c== 'nostems':
-                self.matches[i].set('RE_NSTEMS')
-            else:
-                self.matches[i].set('*MISSING*')
+            #if c == 'tag':
+            #    self.matches[i].set('RE_TAG')
+            #elif c== 'sp':
+            #    self.matches[i].set('SPECIES')
+            #elif c== 'x':
+            #    self.matches[i].set('x')
+            #elif c== 'y':
+            #    self.matches[i].set('y')
+            #elif c== 'dbh':
+            #    self.matches[i].set('DBH_2011')
+            #elif c== 'ExactDate':
+            #    self.matches[i].set('RE_DATE')
+            #elif c== 'RawStatus':
+            #    self.matches[i].set('RE_STATUS')
+            #elif c== 'nostems':
+            #    self.matches[i].set('RE_NSTEMS')
+            #else:
+            self.matches[i].set('*MISSING*')
         
         def CMD_view_col(match_var):
             col = match_var.get()
@@ -357,15 +363,15 @@ class App:
 #           ~~~~ DATE ~~~
             datetime_stamp = pandas.DatetimeIndex( self.hippnet_data ['ExactDate'] )
             self.hippnet_data ['ExactDate'] = datetime_stamp
-            self.hippnet_data ['date']      = datetime_stamp.to_julian_date()
+            self.hippnet_data ['date'] = datetime_stamp.to_julian_date()
 #           ~~~ GPS ~~~~
-            self.hippnet_data.ix[nn['x'], 'gx']       = np.round(self.hippnet_data.ix[nn['x'],'x'] - self.censusx0000, decimals=3)
-            self.hippnet_data.ix[nn['y'], 'gy']       = np.round(self.hippnet_data.ix[nn['y'],'y'] - self.censusy0000, decimals=3)
+            self.hippnet_data.ix[nn['x'], 'gx']  = np.round(self.hippnet_data.ix[nn['x'],'x'] - self.censusx0000, decimals=3)
+            self.hippnet_data.ix[nn['y'], 'gy']  = np.round(self.hippnet_data.ix[nn['y'],'y'] - self.censusy0000, decimals=3)
 #           ~~~ NULL columns which are required for CTFS formatting but dont apply to HIPPNET data 
             self.hippnet_data ['StemTag']  = np.nan
-            self.hippnet_data ['stemID']   = np.nan
-            self.hippnet_data ['codes']    = np.nan
-            self.hippnet_data ['agb']      = np.nan
+            self.hippnet_data ['stemID'] = np.nan
+            self.hippnet_data ['codes'] = np.nan
+            self.hippnet_data ['agb'] = np.nan
 #           ~~~ CENSUS ID label ~~~
             self.hippnet_data ['CensusID'] = self.censusID 
 #           ~~~~ POINT OF MEASUREMENT related ~~~~~
@@ -769,7 +775,7 @@ class App:
 
                 except ImportError:
                     errorWin = tk.Toplevel()
-                    tk.Label(self.errorWin, text='XLSX not supported', background='red', foreground='white').grid(row=0)
+                    tk.Label(errorWin, text='XLSX not supported', background='red', foreground='white').grid(row=0)
                     tk.Button(errorWin, text='Ok', command=errorWin.destroy ).grid(row=1)
             if self.pkl_var.get():
                 self.hippnet_data.to_pickle(outfile_pkl)
