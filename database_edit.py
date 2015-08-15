@@ -4,8 +4,6 @@ except ImportError:
     import tkinter as tk
 import tkFont
 
-from prettytable import PrettyTable
-
 import pandas
 
 class EditorApp( tk.Frame ):
@@ -50,7 +48,6 @@ class EditorApp( tk.Frame ):
 #       subset the data and convert to giant list of strings (rows) for viewing
         self.sub_data = self.df.ix[ self.dat_rows, self.dat_cols  ]
 
-        #self._make_pretty_table()
         #### 
         self.sub_datstring = self.sub_data.to_string(index=False, col_space=13, 
                                                      formatters={c:str for c in self.dat_cols}, 
@@ -378,7 +375,6 @@ class EditorApp( tk.Frame ):
         new_col_val_str = [ str(val) for val in new_col_vals]
         new_line        = self._make_line( new_col_val_str )
         
-        #new_line     = self._make_pretty_line( new_col_vals)
         if self.lb.cget('state') == tk.DISABLED:
             self.lb.config(state=tk.NORMAL)
             self.lb.delete(self.idx)
@@ -401,39 +397,6 @@ class EditorApp( tk.Frame ):
                             for  i,entry in enumerate(col_entries) ] 
         new_line = "".join(new_line_entries)
         return new_line
-
-    def _make_pretty_line( self, col_vals):
-        self.pretty.add_row( col_vals )
-        new_str = self.pretty.get_string(header=False)
-        new_line = new_str.splitlines()[-2] # most recent line sans the end chars 
-        self.pretty.del_row(row_index=self.pretty_start+1)
-        return new_line
-
-    def _make_pretty_table(self):
-        pretty = PrettyTable(list( self.sub_data))
-        pretty.padding_width=2
-        for row in xrange(len(self.sub_data)):
-            pretty.add_row( self.sub_data.iloc[row,].tolist() )
-        pretty_str = pretty.get_string()
-        self.sub_datstring = pretty_str.splitlines()
-        self.sub_datstring.pop(0)
-        self.sub_datstring.pop(1)
-        self.sub_datstring.pop(-1)
-        
-        self.pretty=pretty
-        self._preserve_pretty()
-
-    def _preserve_pretty(self):
-        lines_split       = [ map( lambda x: x.count(' ') ,l.split('|')[1:-1] ) 
-                             for l in self.sub_datstring ]
-        keep_these_inds = list(set( pandas.np.argmax( lines_split, axis=0)))
-        keep_these_inds += list(set( pandas.np.argmin( lines_split, axis=0)))
-        self.pretty.clear_rows()
-        for ind in keep_these_inds:
-            self.pretty.add_row( self.sub_data.iloc[ind].tolist() )
-        self.pretty_start = len(keep_these_inds)-1
-        self.pretty_end   = len(keep_these_inds)
-        #self.pretty.clear_rows()
 
 ##########################
 # RETRIEVE THE DATAFRAME #

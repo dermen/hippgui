@@ -32,8 +32,10 @@ class App:
         self.LabelOpts = {'font':'BOLD', 'background':'darkgreen', 
                             'foreground':'white','relief':tk.RIDGE }
 
-#       get the databases from mysql  
-        self.allDatabases = helper.getDatabaseList()
+
+        self._mysql_connect()
+
+#       get the databases from mysql
 
         self._init_plotCorner_censusID_multiStem()
         self._init_proc_check_vars()
@@ -41,6 +43,48 @@ class App:
         self._make_main_frame_lab_text()
         self._make_widget_container()
         self._layout()
+
+    def _mysql_connect(self):
+        self.login_win = tk.Toplevel()
+        self.login_win.title("Log-In")
+
+        tk.Label(self.login_win, text="Host:").grid(row=0,column=0)
+        self.host_entry = tk.Entry(self.login_win)
+        self.host_entry.grid(row=0,column=1)
+        
+        tk.Label(self.login_win, text="Username:").grid(row=1,column=0)
+        self.user_entry = tk.Entry(self.login_win)
+        self.user_entry.grid(row=1,column=1)
+
+        tk.Label(self.login_win, text="Password:").grid(row=2,column=0)
+        self.pass_entry = tk.Entry(self.login_win, show="*")
+        self.pass_entry.grid(row=2,column=1)
+
+        self.disable_pass = tk.IntVar(self.login_win)
+        disable_cb = tk.Checkbutton(self.login_win, 
+                        text='Check if no password required',
+                        variable=self.disable_pass)
+        disable_cb.grid(row=3,columnspan=2)
+
+        tk.Button(self.login_win, text="Login", command=self._try_login).grid(row=4,columnspan=2)
+
+    def _try_login(self):
+        host = self.host_entry.get()
+        user = self.user_entry.get()
+        if self.disable_pass.get():
+            password = None
+        else:
+            password = self.pass_entry.get()
+        if helper.test_connection(host=host, user=user, password=password ):
+            self.host = host
+            self.user = user
+            self.password = password
+            self.login_win.destroy()
+            self.conn_opts = {'host':self.host, 'user':self.user, 'password':self.password}
+            self.allDatabases = helper.getDatabaseList(**self.conn_opts)
+        else:
+            self.login_win.destroy()
+            self._mysql_connect()
 
     def _make_main_frame_lab_text(self):
         self.Text_DataBase = 'Not selected.'
@@ -83,8 +127,8 @@ class App:
     def _button_layout(self):
         tk.Button(self.container_frame, text='Load a HIPPNET MYSQL Database', command = self.LoadDatabase ).grid(row=0, column=2)
         tk.Button(self.container_frame, text='Define Plot Corner', command=self.plotCorner ).grid(row=1, column=2)
-        tk.Button(self.container_frame, text='Column Selector', command=self.colSelect ).grid(row=2, column=2)
-        tk.Button(self.container_frame, text='Set a CensusID', command = self.setCensusID).grid(row=3, column=2)
+        tk.Button(self.container_frame, text='Set a CensusID', command = self.setCensusID).grid(row=2, column=2)
+        tk.Button(self.container_frame, text='Column Selector', command=self.colSelect ).grid(row=3, column=2)
         tk.Button(self.container_frame, text='Resolve Raw Status', command = self._resolveRawStatus).grid(row=4, column=2)
         tk.Button(self.container_frame, text='Set CTFS DFstatus', command = self.resolveStatus).grid(row=5, column=2)
         tk.Button(self.container_frame, text='Resolve Column', command = self.resolveColVals).grid(row=6, column=2)
@@ -97,8 +141,8 @@ class App:
     def _text_layout(self):
         tk.Label(self.container_frame, text=self.Text_DataBase).grid(row=0, column=1)
         tk.Label(self.container_frame, text=self.Text_PlotCorner).grid(row=1, column=1)
-        tk.Label(self.container_frame, text=self.Text_ColSelect).grid(row=2, column=1)
-        tk.Label(self.container_frame, text=self.Text_CensusID).grid(row=3, column=1)
+        tk.Label(self.container_frame, text=self.Text_CensusID).grid(row=2, column=1)
+        tk.Label(self.container_frame, text=self.Text_ColSelect).grid(row=3, column=1)
         tk.Label(self.container_frame, text=self.Text_ResolveRawStatus).grid(row=4, column=1)
         tk.Label(self.container_frame, text=self.Text_ResolveStatus).grid(row=5, column=1)
         tk.Label(self.container_frame, text=self.Text_ResolveColumns).grid(row=6, column=1)
@@ -108,8 +152,8 @@ class App:
     def _label_layout(self):
         tk.Label(self.container_frame, text='Database Info:', **self.LabelOpts).grid(row=0, column=0)
         tk.Label(self.container_frame, text='Plot Corner:', **self.LabelOpts).grid(row=1, column=0)
-        tk.Label(self.container_frame, text='Columns Matched:', **self.LabelOpts).grid(row=2, column=0)
-        tk.Label(self.container_frame, text='CensusID:', **self.LabelOpts).grid(row=3, column=0)
+        tk.Label(self.container_frame, text='CensusID:', **self.LabelOpts).grid(row=2, column=0)
+        tk.Label(self.container_frame, text='Columns Matched:', **self.LabelOpts).grid(row=3, column=0)
         tk.Label(self.container_frame, text='Resolve Raw Status:', **self.LabelOpts).grid(row=4, column=0)
         tk.Label(self.container_frame, text='Set DF Status:', **self.LabelOpts).grid(row=5, column=0)
         tk.Label(self.container_frame, text='Resolve:', **self.LabelOpts).grid(row=6, column=0)
@@ -148,7 +192,7 @@ class App:
         def CMD_selectDB():
             self.mysql_database = self.database_var.get()
             tk.Label(  self.loadWin,text='Database Table name' , **self.LabelOpts ).grid(row=2, column=0)
-            all_tables = helper.getTables(self.mysql_database)
+            all_tables = helper.getTables(self.mysql_database, **self.conn_opts)
             self.datatable_var = tk.StringVar()
             self.datatable_opt = tk.OptionMenu( self.loadWin, self.datatable_var, *all_tables )
             self.datatable_opt.grid( row=2, column=1)
@@ -156,7 +200,7 @@ class App:
                 mysql_table = self.datatable_var.get()
                 self.Text_DataBase = '%s; %s'%(self.mysql_database, mysql_table)
 #               read HIPPNET TSV file into pandas
-                self.datatype, self.hippnet_data = helper.mysql_to_dataframe( self.mysql_database, mysql_table   )
+                self.datatype, self.hippnet_data = helper.mysql_to_dataframe( self.mysql_database, mysql_table, **self.conn_opts   )
                 self.hippnet_col_names = list(self.hippnet_data)
                 self.loadWin.destroy()
                 self._layout() 
@@ -586,14 +630,14 @@ class App:
                 self.tbl_lab = tk.Label(  self.moreMstemWin,text='Database Table name' , **self.LabelOpts )
                 self.tbl_lab.grid(row=2, column=0)
                 
-                all_tables = helper.getTables(self.mysql_database)
+                all_tables = helper.getTables(self.mysql_database, **self.conn_opts)
                 self.datatable_var = tk.StringVar()
                 self.datatable_opt = tk.OptionMenu( self.moreMstemWin, self.datatable_var, *all_tables )
                 self.datatable_opt.grid( row=2, column=1)
                 def CMD_LoadTable():
                     mysql_table = self.datatable_var.get()
 #                   read HIPPNET TSV file into pandas
-                    self.mstem_datatype, self.mstem_data = helper.mysql_to_dataframe( self.mysql_database, mysql_table   )
+                    self.mstem_datatype, self.mstem_data = helper.mysql_to_dataframe( self.mysql_database, mysql_table , **self.conn_opts  )
                     self.db_lab.destroy()
                     self.database_opt.destroy()
                     self.tbl_lab.destroy()

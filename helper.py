@@ -1,15 +1,23 @@
 import re
-import pymysql
 try:
     import Tkinter as tk
 except ImportError:
     import tkinter as tk
 
+import pymysql
 import pandas
 import numpy as np
 
+def test_connection(host, user, password):
+    try:
+        pymysql.connect(host=host, user=user, password=password)
+        connected = True
+    except pymysql.err.OperationalError:
+        connected = False
+    return connected
+
 def getDatabaseList(host='localhost',user='root', password=None):
-    connection = pymysql.connect(host=host,user=user)
+    connection = pymysql.connect(host=host,user=user, password=password)
     cursor = connection.cursor()
     sql = "show databases"
     cursor.execute(sql)
@@ -17,15 +25,15 @@ def getDatabaseList(host='localhost',user='root', password=None):
     return list(  map( lambda x : x[0], result ) ) 
 
 def getTables( db_name, host='localhost', user='root', password=None):
-    connection = pymysql.connect(host=host,user=user)
+    connection = pymysql.connect(host=host,user=user, password=password)
     cursor = connection.cursor()
     cursor.execute( 'use %s'%db_name )
     cursor.execute('show tables')
     result = cursor.fetchall()
     return list(  map( lambda x : x[0], result ) )
 
-def mysql_to_dataframe( db_name , table_name):
-    connection = pymysql.connect(host='localhost',user='root', db=db_name)
+def mysql_to_dataframe( db_name , table_name, host='localhost', user='root', password=None):
+    connection = pymysql.connect(host=host,user=user, password=password, db=db_name)
     cursor = connection.cursor()
     
     # Read a single record
@@ -65,9 +73,10 @@ def mysql_to_dataframe( db_name , table_name):
 
     return datatypes, dataframe 
 
-def addStemsFromTable(df, db_name , table_name,  multi_stem_col_expression ):
+def addStemsFromTable(df, db_name , table_name,  multi_stem_col_expression, 
+                        host='localhost', user='root', password=None):
 #   connect to the eql database
-    connection = pymysql.connect(host='localhost',user='root',db=db_name)
+    connection = pymysql.connect(host=host,user=user, password=password, db=db_name)
     cursor     = connection.cursor()
 
 #   get the mysql table    
