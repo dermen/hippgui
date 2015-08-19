@@ -769,7 +769,7 @@ class App:
 
                 except ImportError:
                     errorWin = tk.Toplevel()
-                    tk.Label(self.errorWin, text='XLSX not supported', background='red', foreground='white').grid(row=0)
+                    tk.Label(errorWin, text='XLSX not supported', background='red', foreground='white').grid(row=0)
                     tk.Button(errorWin, text='Ok', command=errorWin.destroy ).grid(row=1)
             if self.pkl_var.get():
                 self.hippnet_data.to_pickle(outfile_pkl)
