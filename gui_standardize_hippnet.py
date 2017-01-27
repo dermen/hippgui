@@ -193,15 +193,16 @@ class App:
         file_opt = {'filetypes': [],
                     'initialdir': os.path.expanduser('~')}
         self.db_filename = tkFileDialog.askopenfilename(**file_opt)
-        self.Text_DataBase = self.db_filename
+        self.Text_DataBase = os.path.basename(self.db_filename)
         self._load_tsv()
 
     def _load_tsv(self):
-        self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t', dtype='unicode')
+        self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
         self.datatype = self.hippnet_data.dtypes
         
         #self.datatype, self.hippnet_data = helper.mysql_to_dataframe(self.mysql_database, 
         #    mysql_table, **self.conn_opts)
+        
         self.hippnet_col_names = list(self.hippnet_data)
         #self.loadWin.destroy()
         self.DatabaseLoaded['done'] = True
