@@ -197,15 +197,15 @@ class App:
         self._load_tsv()
 
     def _load_tsv(self):
-        self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+        self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t', dtype='unicode')
         self.datatype = self.hippnet_data.dtypes
         
         #self.datatype, self.hippnet_data = helper.mysql_to_dataframe(self.mysql_database, 
         #    mysql_table, **self.conn_opts)
         self.hippnet_col_names = list(self.hippnet_data)
         #self.loadWin.destroy()
-        self._layout() 
         self.DatabaseLoaded['done'] = True
+        self._layout() 
 
 #################
 # LOAD DATABASE #
