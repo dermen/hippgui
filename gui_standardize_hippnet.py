@@ -349,6 +349,21 @@ class App:
                 scroll_list.pack()
                 tk.Button( view_win,text='close',command=view_win.destroy ).pack()
 
+        def CMD_select_col(stuff):
+            ind, items = stuff
+            view_win = tk.Toplevel()
+            view_win.title("Select it")
+            scroll_list = ScrollList(view_win) #, lines)
+            scroll_list.fill(items)
+            scroll_list.pack()
+
+            def sel():
+                self.matches[ind].set( scroll_list.get_selection() ) 
+                view_win.destroy()
+
+            tk.Button( view_win, text='select and close',command=sel ).pack()
+        
+
         for i,n in enumerate( self.ctfs_names ) : 
             d = self.col_descr[i]
             if n in self.mandatory_cols:
@@ -357,7 +372,9 @@ class App:
                 tk.Label( master=self.colWin, text=n, relief=tk.RIDGE, width=15).grid(row=i+1, column=0)
             tk.Label( master=self.colWin, text=d, relief=tk.RIDGE, width=120).grid(row=i+1, column=1)
             col_choices =['*MISSING*']+ self.hippnet_col_names
-            tk.OptionMenu(self.colWin, self.matches[i],  *col_choices).grid(row=i+1, column=2)  
+            #tk.OptionMenu(self.colWin, self.matches[i],  *col_choices).grid(row=i+1, column=2)  
+            
+            tk.Button( self.colWin, textvariable=self.matches[i], command=lambda x=(i,col_choices):CMD_select_col(x)).grid(row=i+1, column=2)
             tk.Button( self.colWin, text='view', command=lambda x=self.matches[i]:CMD_view_col(x)).grid(row=i+1, column=3)
 
 
