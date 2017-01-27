@@ -381,6 +381,14 @@ class App:
         def CMD_colSelect(): 
             matched_cols = { self.ctfs_names[i]:m.get()  for i,m in enumerate(self.matches) }
             
+            for ctfs_name, curr_name in matched_cols.iteritems():
+                if ctfs_name != curr_name and ctfs_name in self.hippnet_data:
+                    new_name = ctfs_name
+                    while new_name in self.hippnet_data:
+                        new_name += 'BAK'
+                    self.hippnet_data.rename(columns={ctfs_name:new_name}, inplace=True)
+
+
             rename_map = { m.get():self.ctfs_names[i] for i,m in enumerate(self.matches) if m.get() != '*MISSING*' }
             self.hippnet_data.rename(columns=rename_map, inplace=True)
            
