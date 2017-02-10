@@ -147,7 +147,7 @@ class EditorApp( tk.Frame ):
         items = self.lb.curselection()
         if items:
             new_item = items[-1]
-            dataVal = str( self.df.ix[self.rowmap[new_item], self.opt_var.get()] )
+            dataVal = str( self.df.ix[self.rowmap[new_item], self.opt_var2.get()] )
             self.entry_box_old.config( state=tk.NORMAL)
             self.entry_box_old.delete(0,tk.END)
             self.entry_box_old.insert(0, dataVal)
