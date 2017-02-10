@@ -5,7 +5,7 @@ except ImportError:
 import tkFont
 
 import pandas
-
+from helper import ScrollList
 class EditorApp( tk.Frame ):
     def __init__( self, master, dataframe , edit_rows=[] , edit_cols=[], set_col=None):
         """ GUI tkinter frame for making simple edits to a database.
@@ -33,7 +33,7 @@ class EditorApp( tk.Frame ):
         else:
             self.dat_cols = list(self.df)
        
-        if set_col:
+        if set_col is not None:
             self.set_col = set_col
         else:
             self.set_col = self.dat_cols[0]
@@ -153,6 +153,25 @@ class EditorApp( tk.Frame ):
             self.entry_box_old.insert(0, dataVal)
             self.entry_box_old.config( state=tk.DISABLED)
 
+
+###############
+#   PATCH
+    def _Col_Select(self):
+
+        view_win = tk.Toplevel()
+        view_win.title("Select it")
+        scroll_list = ScrollList(view_win) #, lines)
+        scroll_list.fill(list(self.df))
+        scroll_list.pack()
+
+        def sel():
+            self.opt_var2.set( scroll_list.get_selection() )
+            view_win.destroy()
+
+        tk.Button( view_win, text='select and close',command=sel ).pack()
+###############
+
+
 #####################
 # FRAME FOR EDITING #
 #####################
@@ -165,10 +184,15 @@ class EditorApp( tk.Frame ):
         self.col_sel_lab = tk.Label( self.editorFrame, text='Select a column to edit:',**self.lab_opt )
         self.col_sel_lab.grid( row=0, columnspan=2,sticky=tk.W+tk.E)
 
-        self.opt_var= tk.StringVar(self.editorFrame)
-        self.opt_var.set(self.set_col)
-        self.opt = tk.OptionMenu( self.editorFrame, self.opt_var, *list(self.df) )
-        self.opt.grid(row=0, columnspan=2,column=2, sticky=tk.E+tk.W)
+        self.opt_var2 = tk.StringVar(self.editorFrame)
+        self.opt_var2.set( self.set_col)
+        
+        #self.opt_var= tk.StringVar(self.editorFrame)
+        #self.opt_var.set(self.set_col)
+        self.opt2_button = tk.Button( self.editorFrame, textvariable="%s"%self.opt_var2, command=self._Col_Select)
+        self.opt2_button.grid(row=0, columnspan=2,column=2, sticky=tk.E+tk.W)
+        #self.opt = tk.OptionMenu( self.editorFrame, self.opt_var, *list(self.df) )
+        #self.opt.grid(row=0, columnspan=2,column=2, sticky=tk.E+tk.W)
 
         self.old_val_lab = tk.Label(self.editorFrame, text='Old value:',**self.lab_opt)
         self.old_val_lab.grid(row=1, sticky=tk.W, column=0) 
@@ -252,7 +276,7 @@ class EditorApp( tk.Frame ):
 #################
     def _updateDF_multi(self):
         """ command for updating via selection"""
-        self.col = self.opt_var.get()
+        self.col = self.opt_var2.get() #opt_var.get()
         items = self.lb.curselection()
         self._track_items( items)
     
@@ -267,7 +291,7 @@ class EditorApp( tk.Frame ):
 
     def _updateDF_findrep(self):
         """ command for updating via find/replace"""
-        self.col = self.opt_var.get()
+        self.col = self.opt_var2.get() #self.opt_var.get()
         old_val = self.entry_box_old.get()
         try:
             items = pandas.np.where( self.sub_data[self.col].astype(str) == old_val )[0]
