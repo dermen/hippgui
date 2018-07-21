@@ -125,7 +125,7 @@ class App:
         self._text_layout()
 
     def _button_layout(self):
-        tk.Button(self.container_frame, text='Load a HIPPNET MYSQL Database', command = self.LoadDatabase ).grid(row=0, column=2)
+        tk.Button(self.container_frame, text='Load a HIPPNET Database', command = self._sel_db_file).grid(row=0, column=2)
         tk.Button(self.container_frame, text='Define Plot Corner', command=self.plotCorner ).grid(row=1, column=2)
         tk.Button(self.container_frame, text='Set a CensusID', command = self.setCensusID).grid(row=2, column=2)
         tk.Button(self.container_frame, text='Column Selector', command=self.colSelect ).grid(row=3, column=2)
@@ -178,36 +178,67 @@ class App:
         self.col_descr  = data[:,1]
 
 #################
+# LOAD DATABASE  PKL#
+#################
+    #def LoadDatabase(self):
+    #    self.loadWin = tk.Toplevel()
+    #    self.loadWin.title('Select TSV file')
+         
+   #     tk.Button(self.loadWin,
+   #         text='Load TSV file', 
+   #         command=self._sel_files,
+   #         relief=tk.RAISED, bd=3).pack()
+
+    def _sel_db_file(self):
+        file_opt = {'filetypes': [],
+                    'initialdir': os.path.expanduser('~')}
+        self.db_filename = tkFileDialog.askopenfilename(**file_opt)
+        self.Text_DataBase = os.path.basename(self.db_filename)
+        self._load_tsv()
+
+    def _load_tsv(self):
+        self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+        self.datatype = self.hippnet_data.dtypes
+        
+        #self.datatype, self.hippnet_data = helper.mysql_to_dataframe(self.mysql_database, 
+        #    mysql_table, **self.conn_opts)
+        
+        self.hippnet_col_names = list(self.hippnet_data)
+        #self.loadWin.destroy()
+        self.DatabaseLoaded['done'] = True
+        self._layout() 
+
+#################
 # LOAD DATABASE #
 #################
-    def LoadDatabase(self):
-        self.loadWin = tk.Toplevel()
-        self.loadWin.title('Select MYSQL database and table')
+#    def LoadDatabase(self):
+#        self.loadWin = tk.Toplevel()
+#        self.loadWin.title('Select MYSQL database and table')
         
-        tk.Label(self.loadWin, text='MYSQL Database name', **self.LabelOpts  ).grid(row=0,column=0)
-        self.database_var = tk.StringVar()
-        self.database_opt = tk.OptionMenu( self.loadWin, self.database_var, *self.allDatabases )
-        self.database_opt.grid( row=0, column=1)
+#        tk.Label(self.loadWin, text='MYSQL Database name', **self.LabelOpts  ).grid(row=0,column=0)
+#        self.database_var = tk.StringVar()
+#        self.database_opt = tk.OptionMenu( self.loadWin, self.database_var, *self.allDatabases )
+#        self.database_opt.grid( row=0, column=1)
         
-        def CMD_selectDB():
-            self.mysql_database = self.database_var.get()
-            tk.Label(  self.loadWin,text='Database Table name' , **self.LabelOpts ).grid(row=2, column=0)
-            all_tables = helper.getTables(self.mysql_database, **self.conn_opts)
-            self.datatable_var = tk.StringVar()
-            self.datatable_opt = tk.OptionMenu( self.loadWin, self.datatable_var, *all_tables )
-            self.datatable_opt.grid( row=2, column=1)
-            def CMD_LoadTable():
-                mysql_table = self.datatable_var.get()
-                self.Text_DataBase = '%s; %s'%(self.mysql_database, mysql_table)
+#        def CMD_selectDB():
+#            self.mysql_database = self.database_var.get()
+#            tk.Label(  self.loadWin,text='Database Table name' , **self.LabelOpts ).grid(row=2, column=0)
+#            all_tables = helper.getTables(self.mysql_database, **self.conn_opts)
+#            self.datatable_var = tk.StringVar()
+#            self.datatable_opt = tk.OptionMenu( self.loadWin, self.datatable_var, *all_tables )
+#            self.datatable_opt.grid( row=2, column=1)
+#            def CMD_LoadTable():
+#                mysql_table = self.datatable_var.get()
+#                self.Text_DataBase = '%s; %s'%(self.mysql_database, mysql_table)
 #               read HIPPNET TSV file into pandas
-                self.datatype, self.hippnet_data = helper.mysql_to_dataframe( self.mysql_database, mysql_table, **self.conn_opts   )
-                self.hippnet_col_names = list(self.hippnet_data)
-                self.loadWin.destroy()
-                self._layout() 
-                self.DatabaseLoaded['done'] = True
-            tk.Button( self.loadWin, text='Load Table', relief = tk.RAISED, command=CMD_LoadTable  ).grid(row=3,columnspan=2)
+#                self.datatype, self.hippnet_data = helper.mysql_to_dataframe( self.mysql_database, mysql_table, **self.conn_opts   )
+#                self.hippnet_col_names = list(self.hippnet_data)
+#                self.loadWin.destroy()
+#                self._layout() 
+#                self.DatabaseLoaded['done'] = True
+#            tk.Button( self.loadWin, text='Load Table', relief = tk.RAISED, command=CMD_LoadTable  ).grid(row=3,columnspan=2)
 
-        tk.Button( self.loadWin, text='Use Database', relief = tk.RAISED, command=CMD_selectDB  ).grid(row=1,columnspan=2)
+#        tk.Button( self.loadWin, text='Use Database', relief = tk.RAISED, command=CMD_selectDB  ).grid(row=1,columnspan=2)
         
 ##########################
 # PLOT CORNER DEFINITION #
@@ -253,11 +284,11 @@ class App:
             tk.OptionMenu(self.cornerFrame, self.cornerVar,  *[ 'Palamanui', 'Laupahoehoe', 'Sanctuary', 'Mamalahoa' ] ).grid( row=0, column=1 ) 
             def getCornersList():
                 if self.cornerVar.get() == 'Palamanui':
-                    self.censusx0000 = 185950.006
-                    self.censusy0000 = 2185419.984
+                    self.censusx0000 = 185950.
+                    self.censusy0000 = 2185420.
                 elif self.cornerVar.get() == 'Laupahoehoe':
-                    self.censusx0000 = 260420.001
-                    self.censusy0000 = 2205378.002
+                    self.censusx0000 = 260420.
+                    self.censusy0000 = 2205378.
                 elif self.cornerVar.get() == 'Sanctuary':
                     self.censusx0000 = 198451.
                     self.censusy0000 = 2183419.
@@ -302,23 +333,6 @@ class App:
         # initialize each match as "missing"
         self.matches = [ tk.StringVar() for c in self.ctfs_names ]
         for i,c in enumerate( self.ctfs_names) : # in self.matches:
-            #if c == 'tag':
-            #    self.matches[i].set('RE_TAG')
-            #elif c== 'sp':
-            #    self.matches[i].set('SPECIES')
-            #elif c== 'x':
-            #    self.matches[i].set('x')
-            #elif c== 'y':
-            #    self.matches[i].set('y')
-            #elif c== 'dbh':
-            #    self.matches[i].set('DBH_2011')
-            #elif c== 'ExactDate':
-            #    self.matches[i].set('RE_DATE')
-            #elif c== 'RawStatus':
-            #    self.matches[i].set('RE_STATUS')
-            #elif c== 'nostems':
-            #    self.matches[i].set('RE_NSTEMS')
-            #else:
             self.matches[i].set('*MISSING*')
         
         def CMD_view_col(match_var):
@@ -335,6 +349,21 @@ class App:
                 scroll_list.pack()
                 tk.Button( view_win,text='close',command=view_win.destroy ).pack()
 
+        def CMD_select_col(stuff):
+            ind, items = stuff
+            view_win = tk.Toplevel()
+            view_win.title("Select it")
+            scroll_list = ScrollList(view_win) #, lines)
+            scroll_list.fill(items)
+            scroll_list.pack()
+
+            def sel():
+                self.matches[ind].set( scroll_list.get_selection() ) 
+                view_win.destroy()
+
+            tk.Button( view_win, text='select and close',command=sel ).pack()
+        
+
         for i,n in enumerate( self.ctfs_names ) : 
             d = self.col_descr[i]
             if n in self.mandatory_cols:
@@ -343,13 +372,23 @@ class App:
                 tk.Label( master=self.colWin, text=n, relief=tk.RIDGE, width=15).grid(row=i+1, column=0)
             tk.Label( master=self.colWin, text=d, relief=tk.RIDGE, width=120).grid(row=i+1, column=1)
             col_choices =['*MISSING*']+ self.hippnet_col_names
-            tk.OptionMenu(self.colWin, self.matches[i],  *col_choices).grid(row=i+1, column=2)  
+            #tk.OptionMenu(self.colWin, self.matches[i],  *col_choices).grid(row=i+1, column=2)  
+            
+            tk.Button( self.colWin, textvariable=self.matches[i], command=lambda x=(i,col_choices):CMD_select_col(x)).grid(row=i+1, column=2)
             tk.Button( self.colWin, text='view', command=lambda x=self.matches[i]:CMD_view_col(x)).grid(row=i+1, column=3)
 
 
         def CMD_colSelect(): 
             matched_cols = { self.ctfs_names[i]:m.get()  for i,m in enumerate(self.matches) }
             
+            for ctfs_name, curr_name in matched_cols.iteritems():
+                if ctfs_name != curr_name and ctfs_name in self.hippnet_data:
+                    new_name = ctfs_name
+                    while new_name in self.hippnet_data:
+                        new_name += 'BAK'
+                    self.hippnet_data.rename(columns={ctfs_name:new_name}, inplace=True)
+
+
             rename_map = { m.get():self.ctfs_names[i] for i,m in enumerate(self.matches) if m.get() != '*MISSING*' }
             self.hippnet_data.rename(columns=rename_map, inplace=True)
            
@@ -380,7 +419,7 @@ class App:
             else:
                 self.hippnet_data[ 'pom'] = np.nan 
                 self.hippnet_data[ 'hom'] = np.nan 
-            
+           
             for col_name in self.non_mandatory_cols:
                 if matched_cols[ col_name ] == '*MISSING*':
                     self.hippnet_data[ col_name] = np.nan

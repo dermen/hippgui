@@ -34,27 +34,56 @@ class ResolveData(tk.Frame):
 
 #       option menu for selection of dataframe column to resolve
         self.init_lab = tk.Label(self.working_frame,text='Select a column to edit', foreground='white', background='darkgreen')
-        self.opt_var = tk.StringVar(self.working_frame)
-        self.opt = tk.OptionMenu( self.working_frame, self.opt_var, *list(self.df) )
-        self.opt_var.set(list(self.df)[0])
+        
+        
+############################################################################        
+        #self.opt_var = tk.StringVar(self.working_frame)
+        
+        #self.opt = tk.OptionMenu( self.working_frame, self.opt_var, *list(self.df) )
+        #self.opt_var.set(list(self.df)[0])
 
-        if edit_this_col:
+        self.opt_button = tk.Button( self.working_frame, text='select', command=self.CMD_select_col)
+
+        if edit_this_col is not None:
             if edit_this_col in self.df:
-                self.opt_var.set(edit_this_col)
+                #self.opt_var.set(edit_this_col)
+                self.the_selected_col = edit_this_col
                 self._col_select()
             else:
                 raise ValueError
         else:
 #           make button for selecting column and spawning the next set of widgets
+            self.the_selected_col = list( self.df)[0]
             self.sel_b = tk.Button(self.working_frame, text='Select', command = self._col_select )
             self._grid_init()
+#####################################################################################
+
+###############
+    def CMD_select_col(self):
+
+        view_win = tk.Toplevel()
+        view_win.title("Select it")
+        scroll_list = ScrollList(view_win) #, lines)
+        scroll_list.fill(list(self.df))
+        scroll_list.pack()
+
+        def sel():
+            self.the_selected_col = scroll_list.get_selection()
+            self._col_select()
+            view_win.destroy()
+
+        tk.Button( view_win, text='select and close',command=sel ).pack()
+###############
+
     def _grid_init(self):
         self.init_lab.grid(row=0,column=0)
-        self.opt.grid(row=0, column=1)
+        #self.opt.grid(row=0, column=1)
+        self.opt_button.grid(row=0, column=1)
         self.sel_b.grid(row=1, columnspan=2)
      
     def _col_select( self):
-        self.col = self.opt_var.get() 
+        #self.col = self.opt_var.get()
+        self.col = self.the_selected_col
         if self.col not in list(self.df):
             return
         else:
@@ -157,7 +186,8 @@ class ResolveData(tk.Frame):
 if __name__ == '__main__':
     df     = pandas.DataFrame( {'model': pandas.np.random.randint( 0,3,30), 'param1': pandas.np.random.random(30).round(3), 'param2': pandas.np.random.random(30).round(3)} )
     root   = tk.Tk()
-    editor =  ResolveData(root, df)
+    editor =  ResolveData(root, df, 'param1')
     editor.pack(fill=tk.BOTH,expand=tk.YES)
     #tk.Button( root, text='Exit', command=root.destroy).pack(side=tk.BOTTOM)
     root.mainloop()
+
