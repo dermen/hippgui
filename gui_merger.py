@@ -72,9 +72,9 @@ class Merger(tk.Frame):
         
     def _open_and_merge(self):
         self.dfs  = []
-        if len( self.filenames)<2:
-            self.errmsg('Please select at least 2 files!')
-            return
+        #if len( self.filenames)<2:
+        #    self.errmsg('Please select at least 2 files!')
+        #    return
     
         for fname in self.filenames:
             if fname.endswith('.pkl'):
