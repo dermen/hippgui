@@ -134,12 +134,15 @@ def addStemsFromNotes(df):
 def get_ctfs_col_info():
     data = {'dbh': 'Diameter of the stem.', 
         'substrate': 'Describes the ground surface where tree is planted', 
-        'pom': 'The point-of-measure, where the diameter was taken, identical to hom, but a character variable with only 2 decimal places.', 
+        'pom': 'The point-of-measure, where the diameter was taken, identical \n\
+                to hom, but a character variable with only 2 decimal places.', 
         'ExactDate': 'The date on which the stem was measured.', 
         'notes': 'A column of field notes.', 
-        'sp': 'The species mnemonic. This mnemonic is crucial in joining various databases.', 
+        'sp': 'The species mnemonic. This mnemonic is crucial in joining various\n\
+                databases.', 
         'slp': 'standng, leaning, or prone (S,L, or P)',
-        'pig_damage': 'column describing the pig damage (Typically 0,1,2, or 3 depending on the level of damage, 3 being worst)',
+        'pig_damage': 'column describing the pig damage (Typically 0,1,2, or 3 \n\
+                    depending on the level of damage, 3 being worst)',
         'RawStatus': 'status of the tree, alive, dead, new, etc',
         'nostems': 'The number of living stems on the date of measurement.', 
         'tag': 'Tag number used in the field.', 
@@ -147,7 +150,8 @@ def get_ctfs_col_info():
         'y': 'The y coordinate within the plot.', 
         'quadrat': 'Quadrat designation', 
         'subquad': 'Subquad within the quadrat (if applicable)', 
-        'dist_to_nail': 'Distance from the nail to the measuring point as efined in the HIPPNET manual.'}
+        'dist_to_nail': 'Distance from the nail to the measuring point as efined\n\
+                    in the HIPPNET manual.'}
 
     return np.array( data.items() )
 

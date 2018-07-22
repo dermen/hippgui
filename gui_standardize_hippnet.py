@@ -197,7 +197,25 @@ class App:
         self._load_tsv()
 
     def _load_tsv(self):
+        print(self.db_filename)
+        #self.hippnet_data = pandas.read_csv(self.db_filename, sep=',')
         self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+        """
+        try:
+            self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+            print ( len(list(self.hippnet_data)))
+            #exit()
+            #assert( len( list(self.hippnet_data)) >1 )
+        except:
+            print("File not in TSV format, trying CSV")
+            pass
+        try:
+            self.hippnet_data = pandas.read_csv(self.db_filename, sep=',')
+            assert( len( list(self.hippnet_data)) > 1 )
+        except:
+            print("Not in CSV format either... exiting..")
+            sys.exit()
+        """
         self.datatype = self.hippnet_data.dtypes
         
         #self.datatype, self.hippnet_data = helper.mysql_to_dataframe(self.mysql_database, 
@@ -281,7 +299,7 @@ class App:
             tk.Label( self.cornerFrame , text='Plot name:',background='darkgreen',foreground='white', 
                         font='BOLD',relief=tk.RIDGE).grid(row=0,column=0)
             self.cornerVar = tk.StringVar()
-            tk.OptionMenu(self.cornerFrame, self.cornerVar,  *[ 'Palamanui', 'Laupahoehoe', 'Sanctuary', 'Mamalahoa' ] ).grid( row=0, column=1 ) 
+            tk.OptionMenu(self.cornerFrame, self.cornerVar,  *[ 'Palamanui', 'Laupahoehoe', 'Sanctuary', 'Mamalahoa', "Palau" ] ).grid( row=0, column=1 ) 
             def getCornersList():
                 if self.cornerVar.get() == 'Palamanui':
                     self.censusx0000 = 185950.
@@ -295,6 +313,10 @@ class App:
                 elif self.cornerVar.get() == 'Mamalahoa':
                     self.censusx0000 = 201314.
                     self.censusy0000 = 2192168.
+                elif self.cornerVar.get() == "Palau":
+                    self.censusx0000 = 456549.
+                    self.censusy0000 = 830137.
+
                 self.Text_PlotCorner= "x= %.2f; y=%.2f"%(self.censusx0000, self.censusy0000)
                 self.PlotCornerSet['done'] = True
                 self._layout()
@@ -327,19 +349,25 @@ class App:
         self.colWin = tk.Toplevel()
         self.colWin.title('Match Columns to CTFS standards')
         tk.Label( master=self.colWin, text='CTFS column', font='BOLD', relief=tk.RIDGE, width=15).grid( row=0, column=0)
-        tk.Label( master=self.colWin, text='description',  relief=tk.RIDGE, width=120).grid( row=0, column=1)
+        tk.Label( master=self.colWin, text='description',  relief=tk.RIDGE, width=60).grid( row=0, column=1)
         tk.Label( master=self.colWin, text='census column', relief=tk.RIDGE, width=20).grid( row=0, column=2)
 
         # initialize each match as "missing"
         self.matches = [ tk.StringVar() for c in self.ctfs_names ]
-        for i,c in enumerate( self.ctfs_names) : # in self.matches:
-            self.matches[i].set('*MISSING*')
+        if os.path.exists("colSelect_matches.npy"):
+            match_vals = np.load("colSelect_matches.npy")
+            for i,c in enumerate( self.ctfs_names) : # in self.matches:
+                self.matches[i].set(match_vals[i])
+        else:
+            for i,c in enumerate( self.ctfs_names) : # in self.matches:
+                self.matches[i].set('*MISSING*')
         
         def CMD_view_col(match_var):
             col = match_var.get()
             if col == '*MISSING*':
                 return
             else:
+                print "\n\n\n",col
                 data = self.hippnet_data[col]
                 lines = map(str, data.tolist())
                 view_win = tk.Toplevel()
@@ -367,15 +395,17 @@ class App:
         for i,n in enumerate( self.ctfs_names ) : 
             d = self.col_descr[i]
             if n in self.mandatory_cols:
-                tk.Label( master=self.colWin, text=n, relief=tk.RIDGE, width=15, background='red',foreground='white').grid(row=i+1, column=0)
+                tk.Label( master=self.colWin, text=n, relief=tk.RIDGE, width=15, \
+                    background='red',foreground='white').grid(row=i+1, column=0)
             else:
                 tk.Label( master=self.colWin, text=n, relief=tk.RIDGE, width=15).grid(row=i+1, column=0)
-            tk.Label( master=self.colWin, text=d, relief=tk.RIDGE, width=120).grid(row=i+1, column=1)
-            col_choices =['*MISSING*']+ self.hippnet_col_names
-            #tk.OptionMenu(self.colWin, self.matches[i],  *col_choices).grid(row=i+1, column=2)  
+            tk.Label( master=self.colWin, text=d, relief=tk.RIDGE, width=60).grid(row=i+1, column=1)
+            col_choices = ['*MISSING*']+ self.hippnet_col_names
             
-            tk.Button( self.colWin, textvariable=self.matches[i], command=lambda x=(i,col_choices):CMD_select_col(x)).grid(row=i+1, column=2)
-            tk.Button( self.colWin, text='view', command=lambda x=self.matches[i]:CMD_view_col(x)).grid(row=i+1, column=3)
+            tk.Button( self.colWin, textvariable=self.matches[i], \
+                command=lambda x=(i,col_choices):CMD_select_col(x)).grid(row=i+1, column=2)
+            tk.Button( self.colWin, text='view', \
+                command=lambda x=self.matches[i]:CMD_view_col(x)).grid(row=i+1, column=3)
 
 
         def CMD_colSelect(): 
@@ -397,15 +427,27 @@ class App:
                     
             nn = self.hippnet_data.notnull()
 
+#           check for NULL dates
+            #DT = pandas.to_datetime(self.hippnet_data['ExactDate'], errors='coerce')
+            #bad_dates = DT.values==np.datetime64( 'NaT')
+
 #           ~~~~ SPECIES ~~~
-            self.hippnet_data.ix[ nn['sp'], 'sp'] = self.hippnet_data.ix[ nn['sp'],'sp'].map( lambda x:x.upper() )
+            self.hippnet_data.ix[ nn['sp'], 'sp'] = \
+                self.hippnet_data.ix[ nn['sp'],'sp'].map( lambda x:x.upper() )
+
 #           ~~~~ DATE ~~~
-            datetime_stamp = pandas.DatetimeIndex( self.hippnet_data ['ExactDate'] )
+            #datetime_stamp = pandas.DatetimeIndex( self.hippnet_data ['ExactDate'],
+            #    ambiguous='NaT')
+            datetime_stamp = pandas.DatetimeIndex(pandas.to_datetime(\
+                self.hippnet_data['ExactDate'], errors='coerce'))
             self.hippnet_data ['ExactDate'] = datetime_stamp
             self.hippnet_data ['date'] = datetime_stamp.to_julian_date()
+
 #           ~~~ GPS ~~~~
-            self.hippnet_data.ix[nn['x'], 'gx']  = np.round(self.hippnet_data.ix[nn['x'],'x'] - self.censusx0000, decimals=3)
-            self.hippnet_data.ix[nn['y'], 'gy']  = np.round(self.hippnet_data.ix[nn['y'],'y'] - self.censusy0000, decimals=3)
+            self.hippnet_data.ix[nn['x'], 'gx']  = \
+                np.round(self.hippnet_data.ix[nn['x'],'x'] - self.censusx0000, decimals=3)
+            self.hippnet_data.ix[nn['y'], 'gy']  = \
+                np.round(self.hippnet_data.ix[nn['y'],'y'] - self.censusy0000, decimals=3)
 #           ~~~ NULL columns which are required for CTFS formatting but dont apply to HIPPNET data 
             self.hippnet_data ['StemTag']  = np.nan
             self.hippnet_data ['stemID'] = np.nan
@@ -415,7 +457,8 @@ class App:
             self.hippnet_data ['CensusID'] = self.censusID 
 #           ~~~~ POINT OF MEASUREMENT related ~~~~~
             if matched_cols['pom'] != '*MISSING*':
-                self.hippnet_data.ix[nn['pom'], 'hom'] = self.hippnet_data.ix[nn['pom'], 'pom'].map(lambda x:'%.2f'%x)
+                self.hippnet_data.ix[nn['pom'], 'hom'] = \
+                    self.hippnet_data.ix[nn['pom'], 'pom'].map(lambda x:'%.2f'%x)
             else:
                 self.hippnet_data[ 'pom'] = np.nan 
                 self.hippnet_data[ 'hom'] = np.nan 
@@ -429,10 +472,15 @@ class App:
             self.ColumnsMatched['done'] =True
             self.Text_ColSelect = 'Matched!'
             self._layout()        
+            
+            np.save("colSelect_matches", [m.get() for m in self.matches] )
 
         tk.Button(self.colWin, text='Done', foreground='white', background='darkgreen',
                 font='BOLD', command=CMD_colSelect, relief=tk.RAISED).grid(row=len(self.ctfs_names)+1, column = 1 )
         tk.Label( self.colWin, text='Red=Mandatory', foreground='white', background='red').grid(row=len(self.ctfs_names)+1,column=0)
+
+    
+
 
 #############
 # CENSUS ID #
@@ -541,6 +589,7 @@ class App:
             self.winCanvas.configure(scrollregion=self.winCanvas.bbox("all"))
 
     def selectColFromList( self ,window,  column_list, closer, names_list):
+        #column_list = sorted( column_list)
         self.winCanvas =tk.Canvas(window)
         self.winCanvasFrame = tk.Frame(self.winCanvas, bd=1, relief=tk.GROOVE)
         self.winCanvasFrame.pack()
@@ -778,7 +827,8 @@ class App:
                     'gy': float,
                     'hom': float,
                     'pom':str}
-        for col,t in newtypes.iteritems():
+        for col, t in newtypes.iteritems():
+            print col, t
             to_convert = self.hippnet_data[col].notnull()
             self.hippnet_data.ix[ to_convert, col] = self.hippnet_data.ix[to_convert,col ].astype(t) 
 
