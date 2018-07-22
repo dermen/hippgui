@@ -4,11 +4,11 @@ try:
 except ImportError:
     import tkinter as tk
 
-import pymysql
 import pandas
 import numpy as np
 
 def test_connection(host, user, password):
+    print host, user, password
     try:
         pymysql.connect(host=host, user=user, password=password)
         connected = True
@@ -150,8 +150,8 @@ def get_ctfs_col_info():
         'y': 'The y coordinate within the plot.', 
         'quadrat': 'Quadrat designation', 
         'subquad': 'Subquad within the quadrat (if applicable)', 
-        'dist_to_nail': 'Distance from the nail to the measuring point as efined\n\
-                    in the HIPPNET manual.'}
+        'habitat': 'Habitat column',
+        'dist_to_nail': 'Distance from the nail to the measuring point as efined in the HIPPNET manual.'}
 
     return np.array( data.items() )
 

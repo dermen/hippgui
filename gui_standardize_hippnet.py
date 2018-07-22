@@ -818,7 +818,7 @@ class App:
         ######################
         # SPECIFY SOME TYPES #
         ######################
-        newtypes = { 'sp':str,
+        newtypes = {'sp':str,
                     'tag':int,
                     'notes':str,
                     'slp':str,
@@ -827,13 +827,13 @@ class App:
                     'gy': float,
                     'hom': float,
                     'pom':str}
-        for col, t in newtypes.iteritems():
-            print col, t
+        
+        for col,t in newtypes.iteritems():
             to_convert = self.hippnet_data[col].notnull()
-            self.hippnet_data.ix[ to_convert, col] = self.hippnet_data.ix[to_convert,col ].astype(t) 
+            self.hippnet_data.ix[ to_convert, col] = self.hippnet_data.ix[to_convert,col ].astype(t)
 
-        output_cols  = [ col for col in self.ctfs_names if col in list(self.hippnet_data) ] 
-        output_cols += mstem_cols 
+        output_cols  = [ col for col in self.ctfs_names if col in list(self.hippnet_data) ]
+        output_cols += mstem_cols
         output_cols += ['DFstatus', 'status', 'gx', 'gy', 'StemTag', 'stemID', 'agb', 'CensusID', 'codes', 'hom', 'date' ]
        
         self.hippnet_data = self.hippnet_data.loc[:, output_cols]
