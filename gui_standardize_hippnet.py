@@ -198,8 +198,8 @@ class App:
 
     def _load_tsv(self):
         print(self.db_filename)
-        #self.hippnet_data = pandas.read_csv(self.db_filename, sep=',')
-        self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+        self.hippnet_data = pandas.read_csv(self.db_filename, sep=',')
+        #self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
         """
         try:
             self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')

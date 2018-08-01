@@ -180,7 +180,6 @@ class Merge:
             make_locator_col(df,name=self.loc_col,plot_x=self.plot_x)
         self.dfs_j = pandas.concat( dfs, ignore_index=True) 
 
-
     def merge_dfs(self): 
         """sets up a chain of commands to 
             carry out the error correction and
@@ -202,7 +201,6 @@ class Merge:
         self._missing_and_prior()
         self._melt_mstem_data()
         self._save_everything()
-
 
     def _check_dupe_row(self):
         """Check for multiple measurements in same 
