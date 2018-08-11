@@ -137,7 +137,7 @@ class GroupRows:
 
 class Merge:
     def __init__(self,output_dir='.', output_prefix='test', plot_x=200, plot_y=None, quad_x=None, 
-                subquad_x=None, make_beauty=False, make_pkl=False):
+                subquad_x=None, make_beauty=False, make_pkl=False , recalc_subquad=False):
         """class for merging CTFS wide-format databases.
             output_dir: directory to save files
             output_prefix: str prefix to file names
@@ -163,6 +163,7 @@ class Merge:
         if subquad_x:
             self.subquad_x = int(subquad_x)
 
+        self.recalc_SQ = recalc_subquad
         self.make_beauty = make_beauty
         self.make_pkl = make_pkl
 
@@ -194,8 +195,8 @@ class Merge:
         self._tag_duplicates()
         self._group_treeID()
         self._tags_changed()
-        #self._quadrat_correction()
-        #self._subquad_correction()
+        self._quadrat_correction()
+        self._subquad_correction()
         self._out_of_plot_boundary()
         self._species_changed_correction()
         self._missing_and_prior()
@@ -205,6 +206,7 @@ class Merge:
     def _check_dupe_row(self):
         """Check for multiple measurements in same 
             census for same tree"""
+        print("Checking for Duplicates...")
         gb_id = self.dfs_j.groupby((self.loc_col, 'tag', 'CensusID'))
         id_dupes = gb_id.size()[ gb_id.size() > 1 ] 
         if np.any(id_dupes):
@@ -220,9 +222,11 @@ class Merge:
                                             'RawStatus','ExactDate'], 
                                 message='Delte duplicate rows',
                                 root_exists=False)
+        print("\tDone.")
 
     def _check_location_dupes(self):
         """find where the x,y overlap in a given census"""
+        print("Checking for overlapping trees (i n gx,gy)...")
         gb = self.dfs_j.groupby(( self.loc_col, 'CensusID' ))
         gb_sizes = gb.size().reset_index(name='sizes')
         gb_dupes = gb_sizes.loc[gb_sizes.sizes > 1]
@@ -237,31 +241,40 @@ class Merge:
             isin =  np.logical_or( isin_locs, isin_tags) 
             self.dupes_df = self.dfs_j.loc[isin]
             self.dupes_df = self.dupes_df.drop_duplicates()
-            self.dupes_df = self.dupes_df.sort( ['tag','CensusID'])
+            self.dupes_df = self.dupes_df.sort_values( by=['tag','CensusID'])
         else:
             self.dupes_df = None
+        print("\tDone.")
         
     def _correct_loc_dupes(self):
+        print("Correcting for duplicates...")
         if self.dupes_df is not None:
             root = tk.Tk()
             group_rows = GroupRows(root, self.dupes_df, self.dfs_j, self.loc_col)
             root.mainloop()
             self.dfs_j = group_rows.dfs_j 
+        print("\tDone.")
 
     def _assign_treeID(self):
         """Assigin the tree ID"""
+        print("Assiging unique tree ID based on tag and position...")
         treeID_map = { loc:i for i,loc in enumerate(pandas.unique(self.dfs_j[self.loc_col])) }
         treeID     = [ treeID_map[l] for l in self.dfs_j[self.loc_col] ]
         self.dfs_j.ix[:,'treeID'] = treeID
+        print("\tDone.")
+
 
     def _rename_dbh_cols(self):
         """rename dbh main stem col"""
+        print("Renaming DBH columns for melted format...")
         self.dfs_j.rename( columns={'dbh':'dbh_0'}, inplace=True)
         self.dbh_cols = ['dbh_%d'%x for x in xrange(self.max_stems)] # colums corresponding to the dbh values
         self.dfs_j    = self.dfs_j.ix[:, [c for c in list(self.dfs_j) if c not in self.dbh_cols] + self.dbh_cols] # rearrange the column order for cleanliness
+        print("\tDone.")
 
     def _nostems_correction(self):
         """correct where number of stems is inaccurate"""
+        print("Counting number of stems and correcting reported value if necessary...")
         dbh_na_map = {0:np.nan, -1:np.nan, -999:np.nan}
         self.dfs_j.replace(to_replace={c:dbh_na_map for c in self.dbh_cols}, inplace=True)
 
@@ -275,9 +288,11 @@ class Merge:
             if self.writer:
                 subdata.to_excel( self.writer, 'nostem_mistakes', float_format='%.2f' , na_rep='NA') 
             self.dfs_j.update(nostems_actual.iloc[nostems_err_inds].to_frame('nostems') )
+        print("\tDone.")
 
     def _xy_duplicates(self):
         """list xy duplicates per census"""
+        print("Listing xy duplicates.. ")
         xy_groups      = self.dfs_j.groupby(['CensusID','gx','gy'])
         xy_dupe_inds   = [inds for group,inds in xy_groups.groups.iteritems() if len(inds) > 1 ]
         if xy_dupe_inds:
@@ -285,10 +300,12 @@ class Merge:
             subdata     = self.dfs_j.iloc[xy_dupe_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
             if self.writer:
                 subdata.to_excel( self.writer, 'xy_duplicates', float_format='%.2f' , na_rep='NA') 
+        print("\tDone.")
 
 
     def _tag_duplicates(self):
         """list tag duplicates per census"""
+        print("Listing tag duplicates")
         tag_groups      = self.dfs_j.groupby(['CensusID','tag'])
         tag_dupe_inds   = [inds for group,inds in tag_groups.groups.iteritems() if len(inds) > 1 ]
         if tag_dupe_inds:
@@ -296,6 +313,7 @@ class Merge:
             subdata     = self.dfs_j.ix[tag_dupe_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
             if self.writer:
                 subdata.to_excel( self.writer, 'tag_duplicates', float_format='%.2f' , na_rep='NA') 
+        print("\tDone.")
 
     def _group_treeID(self):
         self.id_groups = self.dfs_j.groupby( ['treeID'] )
@@ -303,15 +321,18 @@ class Merge:
 
     def _tags_changed(self):
         """list tags that change across censuses"""
+        print("Trees where tags have changed...")
         tags_per_treeID = self.id_groups['tag'].unique()
         tags_changed = [ treeID for treeID,tags in tags_per_treeID.iteritems() if len(tags) > 1 ]
         if tags_changed:
             subdata = pandas.concat([ self.id_groups.get_group(treeID) for treeID in tags_changed], keys=tags_changed )
             if self.writer:
                 subdata.to_excel( self.writer, 'tags_changed', float_format='%.2f' , na_rep='NA') 
+        print("\tDone.")
 
     def _quadrat_correction(self):
         """correct where quadrat is incorrect"""
+        print("Correcting where tree quadrat is out of bounds...")
         if self.quad_x:
             quad = zip( (self.dfs_j.gx/self.quad_x).astype(int), (self.dfs_j.gy/self.quad_x).astype(int) )
             quad_str = map( lambda x: '%02d%02d'%(x[0],x[1]), quad)
@@ -322,23 +343,32 @@ class Merge:
                 if self.writer:
                     subdata.to_excel( self.writer, 'quadrat_mistakes', float_format='%.2f' , na_rep='NA') 
                 self.dfs_j.update(quad_str.iloc[quad_err_inds].to_frame('quadrat'))
+        print("\tDone.")
     
     
     def _subquad_correction(self):
         """correct where subquad is incorrect"""
+        if not self.recalc_SQ:
+            return
+        print("Attempting subquad correction...")
         if self.quad_x and self.subquad_x:
             subquad = zip((self.dfs_j.gx%self.quad_x/self.subquad_x).astype(int)+1, (self.dfs_j.gy%self.quad_x/self.subquad_x).astype(int)+1 )
             subquad_str = map( lambda x: '%d,%d'%(x[0],x[1]), subquad)
             subquad_str = pandas.Series(data=subquad_str, index=self.dfs_j.index)
-            subquad_err_inds = np.where( subquad_str != self.dfs_j.subquad )[0]
-            if subquad_err_inds.size:
-                subdata = self.dfs_j.iloc[subquad_err_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
-                if self.writer:
-                    subdata.to_excel( self.writer, 'subquad_mistakes', float_format='%.2f' , na_rep='NA') 
-                self.dfs_j.update(subquad_str.iloc[subquad_err_inds].to_frame('subquad'))
+            #subquad_err_inds = np.where( subquad_str != self.dfs_j.subquad )[0]
+            #if subquad_err_inds.size:
+            
+            subdata = self.dfs_j.iloc[:].reset_index().set_index(['CensusID','index']).sortlevel(0)
+                
+                #if self.writer:
+                #    subdata.to_excel( self.writer, 'subquad_mistakes', float_format='%.2f' , na_rep='NA') 
+                
+            self.dfs_j.update(subquad_str.iloc[:].to_frame('subquad'))
+        print("\tDone.")
 
     def _out_of_plot_boundary(self):
         """list entries that are out of the plot bounds"""
+        print("Listing where x,y is out of bounds")
         if self.plot_x and self.plot_y:
             x_out_inds = np.where( self.dfs_j.gx > self.plot_x )[0]
             if x_out_inds.size:
@@ -350,10 +380,12 @@ class Merge:
                 subdata = self.dfs_j.iloc[y_out_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
                 if self.writer:
                     subdata.to_excel( self.writer, 'y out of bounds', float_format='%.2f' , na_rep='NA') 
+        print("\tDone.")
 
 
     def _species_changed_correction(self):
         """find and correct species that change across censuses"""
+        print("Where has the species changed; will use most recent assigned species//")
         sp_per_treeID = self.id_groups['sp'].unique()
         sp_changed = [ treeID for treeID,sp_vals in sp_per_treeID.iteritems() if len(sp_vals) > 1 ]
         if sp_changed:
@@ -364,11 +396,13 @@ class Merge:
                 group = self.id_groups.get_group(treeID)
                 recent_sp = group.ix[ np.argmax(group.CensusID), 'sp']
                 self.dfs_j.ix[group.index.tolist(),'sp' ] = recent_sp
+        print("\tDone.")
     
     
     def _missing_and_prior(self):
         """create prior and missing entries for main stems
             in censuses that don't have a recording"""
+        print("Making rows for missing and prior trees.. ")
         allcensuses = np.unique( self.dfs_j.CensusID)
         nostem_per_treeID = self.id_groups['nostems'].unique()
         census_per_treeID = self.id_groups['CensusID'].unique()
@@ -398,10 +432,12 @@ class Merge:
         self.data = pandas.concat((self.dfs_j, new_data),ignore_index=True)
         self.data.loc[ self.data.RawStatus=='missing',['DFstatus','status'] ] = 'missing','M'
         self.data.loc[ self.data.RawStatus=='prior',  ['DFstatus','status'] ] = 'prior','P'
+        print("\tDone.")
     
     
     def _melt_mstem_data(self):
         """melt the mstem data from wide to long format"""
+        print("MELT Multiple stem data")
         nostems_max = self.data.groupby('treeID')['nostems'].max()
         melted_data = []
         id_vars = [c for c in list(self.dfs_j) if c not in self.dbh_cols] 
@@ -416,16 +452,22 @@ class Merge:
         self.tidy_data.ix[:,'mstem'] = self.tidy_data.ix[:,'mstem'].map( lambda x:x.split('_')[-1] )
     
         self.tidy_data = self.tidy_data.sort_index(by=['treeID','CensusID'])
+        print("\tDone.")
 
     def _save_everything(self):
+        print("Saving...")
         self.tidy_data.to_csv('%s_master.txt'%self.plot_name, sep='\t', na_rep='NA', float_format='%.2f')
         if self.writer:
+            print("\tSaving XCEL datalog marking changes..")
             self.writer.save()
         if self.make_pkl:
+            print("\tSaving pickle...")
             self.tidy_data.to_pickle('%s_stacked.pkl'%self.plot_name)
         if self.make_beauty:
+            print("\tSaving formatted XCEL")
             beautiful_data = self.tidy_data.groupby(('treeID','CensusID','mstem')).first()
             beautiful_data.to_excel( '%s_beauty.xlsx'%self.plot_name, na_rep='NA', float_format='%.2f')
+        print("\tDone.")
 
 
 if __name__ == '__main__':

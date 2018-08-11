@@ -30,6 +30,12 @@ class Merger(tk.Frame):
                                             text='Merge files',
                                             command=self._open_and_merge,
                                             relief=tk.RAISED, bd=3)
+        
+        self.recalc_SQ_frame = tk.Frame( self.main_frame, bd=2, relief=tk.RIDGE )
+        self.recalc_SQ_var = tk.IntVar()
+        self.recalc_SQ_button = tk.Checkbutton( self.recalc_SQ_frame, 
+            text="Recalc. subquads", variable=self.recalc_SQ_var)
+         
         self.filenames = []
         self.file_list = tk.Listbox(self.main_frame, bd='3',relief=tk.SUNKEN)
         self._add_listbox_title()
@@ -62,14 +68,17 @@ class Merger(tk.Frame):
     def _pack_widgets(self):
         self.main_frame.pack(fill=tk.BOTH,expand=tk.YES)
         
-        self.btn_frame.pack( side=tk.TOP) 
+        self.btn_frame.pack( side=tk.TOP)
+        self.recalc_SQ_frame.pack(side=tk.TOP)
         self.file_list.pack(side=tk.TOP,fill=tk.BOTH,
                             expand=tk.YES, padx=5, pady=5)
         
         self.sel_btn.pack(side=tk.LEFT, expand=tk.YES)
         self.clear_btn.pack(side=tk.LEFT, expand=tk.YES)
         self.open_files_btn.pack(side=tk.LEFT,expand=tk.YES)
-        
+       
+        self.recalc_SQ_button.pack( side=tk.LEFT, expand=tk.YES)
+
     def _open_and_merge(self):
         self.dfs  = []
         #if len( self.filenames)<2:
@@ -176,7 +185,8 @@ class Merger(tk.Frame):
         merger_args = { 'plot_x':self.plot_x, 'plot_y':self.plot_y,
                         'quad_x':self.quad_x, 'subquad_x':self.subquad_x,
                         'output_prefix':self.out_pref, 'output_dir':self.out_dir,
-                        'make_beauty':self.make_beauty, 'make_pkl':self.make_pkl }
+                        'make_beauty':self.make_beauty, 'make_pkl':self.make_pkl,
+                        'recalc_subquad': self.recalc_SQ_var}
         merge = gui_merger_helper.Merge(**merger_args)
         merge.load_dataframes(self.dfs)
         merge.merge_dfs()
