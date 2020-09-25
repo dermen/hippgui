@@ -198,8 +198,18 @@ class App:
 
     def _load_tsv(self):
         print(self.db_filename)
-        self.hippnet_data = pandas.read_csv(self.db_filename, sep=',')
-        #self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+        try:
+            self.hippnet_data = pandas.read_csv(self.db_filename, sep=',')
+            csv_passed = True
+        except:
+            csv_passed = False
+            pass
+        if not csv_passed:
+            try:
+                self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
+            except:
+                pass
+        
         """
         try:
             self.hippnet_data = pandas.read_csv(self.db_filename, sep='\t')
@@ -589,7 +599,6 @@ class App:
             self.winCanvas.configure(scrollregion=self.winCanvas.bbox("all"))
 
     def selectColFromList( self ,window,  column_list, closer, names_list):
-        #column_list = sorted( column_list)
         self.winCanvas =tk.Canvas(window)
         self.winCanvasFrame = tk.Frame(self.winCanvas, bd=1, relief=tk.GROOVE)
         self.winCanvasFrame.pack()
@@ -605,6 +614,7 @@ class App:
         lab = tk.Label(self.winCanvasFrame, text='Select Columns with Multi-Stem DBH values', **self.LabelOpts  )
         lab.grid(row=0)
         
+        #column_list = sorted( column_list)
         self.col_vars = { col:tk.IntVar() for col in column_list }
         for i,col in enumerate( self.col_vars ):
             cb = tk.Checkbutton(self.winCanvasFrame, text=col, variable=self.col_vars[ col ] ).grid( row = i+1, sticky=tk.W )

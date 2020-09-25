@@ -35,6 +35,11 @@ class Merger(tk.Frame):
         self.recalc_SQ_var = tk.IntVar()
         self.recalc_SQ_button = tk.Checkbutton( self.recalc_SQ_frame, 
             text="Recalc. subquads", variable=self.recalc_SQ_var)
+        
+        self.recalc_Q_frame = tk.Frame( self.main_frame, bd=2, relief=tk.RIDGE )
+        self.recalc_Q_var = tk.IntVar()
+        self.recalc_Q_button = tk.Checkbutton( self.recalc_Q_frame, 
+            text="Recalc. quadrats", variable=self.recalc_Q_var)
          
         self.filenames = []
         self.file_list = tk.Listbox(self.main_frame, bd='3',relief=tk.SUNKEN)
@@ -70,6 +75,7 @@ class Merger(tk.Frame):
         
         self.btn_frame.pack( side=tk.TOP)
         self.recalc_SQ_frame.pack(side=tk.TOP)
+        self.recalc_Q_frame.pack(side=tk.TOP)
         self.file_list.pack(side=tk.TOP,fill=tk.BOTH,
                             expand=tk.YES, padx=5, pady=5)
         
@@ -78,6 +84,7 @@ class Merger(tk.Frame):
         self.open_files_btn.pack(side=tk.LEFT,expand=tk.YES)
        
         self.recalc_SQ_button.pack( side=tk.LEFT, expand=tk.YES)
+        self.recalc_Q_button.pack( side=tk.LEFT, expand=tk.YES)
 
     def _open_and_merge(self):
         self.dfs  = []
@@ -186,7 +193,7 @@ class Merger(tk.Frame):
                         'quad_x':self.quad_x, 'subquad_x':self.subquad_x,
                         'output_prefix':self.out_pref, 'output_dir':self.out_dir,
                         'make_beauty':self.make_beauty, 'make_pkl':self.make_pkl,
-                        'recalc_subquad': self.recalc_SQ_var}
+                        'recalc_subquad': self.recalc_SQ_var.get(), 'recalc_quad': self.recalc_Q_var.get() }
         merge = gui_merger_helper.Merge(**merger_args)
         merge.load_dataframes(self.dfs)
         merge.merge_dfs()

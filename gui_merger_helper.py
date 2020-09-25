@@ -137,7 +137,7 @@ class GroupRows:
 
 class Merge:
     def __init__(self,output_dir='.', output_prefix='test', plot_x=200, plot_y=None, quad_x=None, 
-                subquad_x=None, make_beauty=False, make_pkl=False , recalc_subquad=False):
+                subquad_x=None, make_beauty=False, make_pkl=False , recalc_subquad=False, recalc_quad=False):
         """class for merging CTFS wide-format databases.
             output_dir: directory to save files
             output_prefix: str prefix to file names
@@ -146,7 +146,9 @@ class Merge:
             quad_x: quadrat width in meter
             subquad: subquad width in meter
             make_beauty: boolean, whether to make a beautifl xlsx file
-            make_pkl: boolean, whether to make a python binary file"""
+            make_pkl: boolean, whether to make a python binary file
+            recalc_subquad: boolean, whether to recalcuate subquad based on x,y
+            recalc_quad: boolean, whether to recalcuate quad based on x,y"""
  
         self.plot_name = os.path.join( output_dir, output_prefix)
         try: 
@@ -164,6 +166,7 @@ class Merge:
             self.subquad_x = int(subquad_x)
 
         self.recalc_SQ = recalc_subquad
+        self.recalc_Q = recalc_quad
         self.make_beauty = make_beauty
         self.make_pkl = make_pkl
 
@@ -278,11 +281,14 @@ class Merge:
         dbh_na_map = {0:np.nan, -1:np.nan, -999:np.nan}
         self.dfs_j.replace(to_replace={c:dbh_na_map for c in self.dbh_cols}, inplace=True)
 
-#       sort the dbh vals so no vals are at the end 
+#       sort the dbh vals so NaN vals are at the end 
         self.dfs_j.ix[:,['dbh_%d'%x for x in xrange(1,self.max_stems)]] = np.sort( self.dfs_j.ix[:,['dbh_%d'%x for x in xrange(1,self.max_stems)]].values, axis=1)
 #       number of recorded stems dbh values VS the number recorded in the 'nostems' columns
-        nostems_actual   = self.dfs_j.ix[:,self.dbh_cols].notnull().sum(axis=1)
+        nostems_actual = self.dfs_j.ix[:,self.dbh_cols].notnull().sum(axis=1)
+        print( self.dfs_j.ix[:,self.dbh_cols].notnull() )
+        print( self.dfs_j.ix[:,self.dbh_cols].notnull() )
         nostems_err_inds = np.where( nostems_actual != self.dfs_j.nostems )[0]
+        
         if nostems_err_inds.size:
             subdata = self.dfs_j.iloc[nostems_err_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
             if self.writer:
@@ -332,17 +338,25 @@ class Merge:
 
     def _quadrat_correction(self):
         """correct where quadrat is incorrect"""
+        if not self.recalc_Q:
+            return
         print("Correcting where tree quadrat is out of bounds...")
         if self.quad_x:
             quad = zip( (self.dfs_j.gx/self.quad_x).astype(int), (self.dfs_j.gy/self.quad_x).astype(int) )
             quad_str = map( lambda x: '%02d%02d'%(x[0],x[1]), quad)
             quad_str = pandas.Series(data=quad_str, index=self.dfs_j.index)
-            quad_err_inds = np.where( quad_str != self.dfs_j.quadrat )[0]
-            if quad_err_inds.size:
-                subdata = self.dfs_j.iloc[quad_err_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
-                if self.writer:
-                    subdata.to_excel( self.writer, 'quadrat_mistakes', float_format='%.2f' , na_rep='NA') 
-                self.dfs_j.update(quad_str.iloc[quad_err_inds].to_frame('quadrat'))
+            
+            #cond1 = quad_str != self.dfs_j.quadrat
+            #cond2 = self.dfs_j.quadrat.isna()
+            #bad_quad_cond = np.logical_or( cond1, cond2) 
+            #quad_err_inds = np.where( bad_quad_cond )[0]
+            #if quad_err_inds.size:
+            #subdata = self.dfs_j.iloc[quad_err_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
+            subdata = self.dfs_j.iloc[:].reset_index().set_index(['CensusID','index']).sortlevel(0)
+            #    if self.writer:
+            #        subdata.to_excel( self.writer, 'quadrat_mistakes', float_format='%.2f' , na_rep='NA') 
+            #   self.dfs_j.update(quad_str.iloc[quad_err_inds].to_frame('quadrat'))
+            self.dfs_j.update(quad_str.iloc[:].to_frame('quadrat'))
         print("\tDone.")
     
     
@@ -352,7 +366,8 @@ class Merge:
             return
         print("Attempting subquad correction...")
         if self.quad_x and self.subquad_x:
-            subquad = zip((self.dfs_j.gx%self.quad_x/self.subquad_x).astype(int)+1, (self.dfs_j.gy%self.quad_x/self.subquad_x).astype(int)+1 )
+            subquad = zip((self.dfs_j.gx%self.quad_x/self.subquad_x).astype(int)+1, 
+                        (self.dfs_j.gy%self.quad_x/self.subquad_x).astype(int)+1 )
             subquad_str = map( lambda x: '%d,%d'%(x[0],x[1]), subquad)
             subquad_str = pandas.Series(data=subquad_str, index=self.dfs_j.index)
             #subquad_err_inds = np.where( subquad_str != self.dfs_j.subquad )[0]
