@@ -1,8 +1,9 @@
 try: 
     import Tkinter as tk
+    import tkFont
 except ImportError:
     import tkinter as tk
-import tkFont
+    from tkinter import font as tkFont
 
 import pandas
 from helper import ScrollList
@@ -38,7 +39,7 @@ class EditorApp( tk.Frame ):
         else:
             self.set_col = self.dat_cols[0]
 
-        edit_rows   = list(edit_rows)
+        edit_rows     = list(edit_rows)
         if edit_rows:
             self.dat_rows = edit_rows
         else:
@@ -48,13 +49,16 @@ class EditorApp( tk.Frame ):
 #       subset the data and convert to giant list of strings (rows) for viewing
         self.sub_data = self.df.ix[ self.dat_rows, self.dat_cols  ]
 
-        
-        self.sub_datstring = [ "".join([ self._get_formatters(c)(val) for c,val in zip( self.dat_cols, row) ]) \
-                for _,row in self.sub_data.iterrows() ]
-        
+        #### 
+        self.sub_datstring = self.sub_data.to_string(index=False, col_space=13, 
+                                                     formatters={c:str for c in self.dat_cols}, 
+                                                     justify='right')
+        self.sub_datstring = self.sub_datstring.replace('\n',' \n').split('\n') #adds a space to end of each line so we can match columns
         ####
-        self.title_string =   "".join( [ self._quick_str_format(c) for c in self.dat_cols ])
+        self.title_string = self.sub_datstring[0]
 
+#       save the format of the lines, so we can update them without re-running df.to_string()
+        self._get_line_format(self.title_string)
 
 #       fill in the main frame 
         self._fill()
@@ -64,79 +68,6 @@ class EditorApp( tk.Frame ):
 
 #       container for rows which will be deleted upon exit
         self.to_delete  = []
-
-    def _quick_str_format(self,x):
-        s = "%s"%x
-        if len(s) < 10:
-            return "%10s||"%s
-        elif len(s) > 10:
-            return "%.10s||"%s
-        else:
-            return "%s||"%s
-
-    def _get_formatters(self, col):
-        val = self.df[col][0]
-        
-        if isinstance( val, float):
-            def func(x):  
-                s = "%8.2f"%x
-                if len(s) < 10:
-                    return "%10s||"%s
-                elif len(s) > 10:
-                    return "%.10s||"%s
-                else:
-                    return "%s||"%s
-
-        elif isinstance( val, str):
-            def func(x):
-                s = "%s"%x
-                if len(s) < 10:
-                    return "%10s||"%s
-                elif len(s) > 10:
-                    return "%.10s||"%s
-                else:
-                    return "%s||"%s
-
-        elif isinstance( val, int):
-            def func( x):
-                s = "%d"%x 
-                if len(s) < 10:
-                    return "%10s||"%s
-                elif len(s) > 10:
-                    return "%.10s||"%s
-                else:
-                    return "%s||"%s
-        
-        elif isinstance( val, pandas.datetime):
-            def func(x):
-                try:
-                    s =  x.strftime("%m-%Y")
-                except ValueError:
-                    s = "%.10s||"%("NaT")
-                
-                if len(s) < 10:
-                    return "%10s||"%s
-                elif len(s) > 10:
-                    return "%.10s||"%s
-                else:
-                    return "%s||"%s
-        
-        else:
-            try:
-                def func(x):
-                    s = str(x)
-                    if len(s) < 10:
-                        return "%10s||"%s
-                    elif len(s) > 10:
-                        return "%.10s||"%s
-                    else:
-                        return "%s||"%s
-                    
-                s = func(val)
-            except:
-                func = lambda x: "%10s||"%("ERROR")
-        
-        return func
 
 ##################
 # ADDING WIDGETS #
@@ -157,7 +88,7 @@ class EditorApp( tk.Frame ):
 # SCROLLBARS #
 ##############
     def _init_scroll(self):
-        self.scrollbar  = tk.Scrollbar(self.canvas, orient="vertical", width=25)
+        self.scrollbar  = tk.Scrollbar(self.canvas, orient="vertical")
         self.xscrollbar = tk.Scrollbar(self.canvas, orient="horizontal")
 
     def _pack_config_scroll(self):
@@ -166,10 +97,10 @@ class EditorApp( tk.Frame ):
         self.scrollbar.pack(side="right", fill="y")
         self.xscrollbar.pack(side="bottom", fill="x")
 
-    #def _onMouseWheel(self, event):
-    #    self.title_lb.yview("scroll", event.delta,"units")
-    #    self.lb.yview("scroll", event.delta,"units")
-    #    return "break"
+    def _onMouseWheel(self, event):
+        self.title_lb.yview("scroll", event.delta,"units")
+        self.lb.yview("scroll", event.delta,"units")
+        return "break"
 
     def _xview(self, *args):
         """connect the yview action together"""
@@ -198,11 +129,11 @@ class EditorApp( tk.Frame ):
                             selectmode=tk.EXTENDED)
 
     def _pack_bind_lb(self):
-        self.title_lb.pack(fill=tk.X, expand=False) 
-        self.lb.pack(fill=tk.BOTH, expand=tk.YES)
+        self.title_lb.pack(fill=tk.X) 
+        self.lb.pack(fill="both", expand=True)
 
-        #self.title_lb.bind("<MouseWheel>", self._onMouseWheel)
-        #self.lb.bind("<MouseWheel>", self._onMouseWheel)
+        self.title_lb.bind("<MouseWheel>", self._onMouseWheel)
+        self.lb.bind("<MouseWheel>", self._onMouseWheel)
 
     def _fill_listbox(self):
         """ fill the listbox with rows from the dataframe"""
@@ -291,9 +222,6 @@ class EditorApp( tk.Frame ):
         self.update_b = tk.Button( self.editorFrame, text='Update selection', relief=tk.RAISED, command=self._updateDF_multi )
         self.update_b.grid(row=2, columnspan=1, column=3, sticky=tk.W+tk.E) 
 
-#       removing columns
-        self.remove_cols_b = tk.Button( self.editorFrame, text='Remove columns', relief=tk.RAISED, command=self._updateDF_multi )
-        self.remove_cols_b.grid( row=3, columnspan=1, column=3, sticky=tk.W+tk.E)
 
 ################
 # SELECT MODES #
@@ -467,8 +395,10 @@ class EditorApp( tk.Frame ):
     def _rewrite(self): 
         """ re-writing the dataframe string in the listbox"""
         new_col_vals = self.df.iloc[ self.row].tolist()
+        #new_col_vals    = [ self.df.ix[ self.row , col ] for col in self.dat_cols]
         
-        new_line = "".join([ self._get_formatters(c)(val) for c,val in zip( self.dat_cols, new_col_vals) ])
+        new_col_val_str = [ str(val) for val in new_col_vals]
+        new_line        = self._make_line( new_col_val_str )
         
         if self.lb.cget('state') == tk.DISABLED:
             self.lb.config(state=tk.NORMAL)
@@ -479,6 +409,19 @@ class EditorApp( tk.Frame ):
             self.lb.delete(self.idx)
             self.lb.insert(self.idx,new_line)
 
+    def _get_line_format(self, line) :
+        """ save the format of the title string, stores positions
+            of the column breaks"""
+        pos = [1+line.find(' %s '%n)+len(n) for n in self.dat_cols]
+        self.entry_length = [pos[0]] + [ p2-p1 for p1,p2 in zip(  pos[:-1], pos[1:] ) ]
+         
+    def _make_line( self , col_entries):
+        """ add a new line to the database in the correct format
+            col_entries must be strings!"""
+        new_line_entries = [ ('{0: >%d}'%self.entry_length[i]).format(entry)  
+                            for  i,entry in enumerate(col_entries) ] 
+        new_line = "".join(new_line_entries)
+        return new_line
 
 ##########################
 # RETRIEVE THE DATAFRAME #
@@ -492,20 +435,18 @@ class EditorApp( tk.Frame ):
 def main():
 #   make a test dataframe here of integers, can be anything really
     df = pandas.DataFrame(pandas.np.random.random((1000, 20)), columns=['col_%d'%x for x in xrange( 20 ) ] ) 
-    df = pandas.read_pickle("palau_perlim.pkl")
+
 #   start
     root       = tk.Tk()
     editor     = EditorApp(  root, df )
-    editor.pack(fill=tk.BOTH, expand=tk.YES)
+    editor.pack()
     root.mainloop() # until closes window
 
 #   re-assign dataframe    
     new_df = editor.df
 
-    print "THIS IS THE NEW DATABASE:"
-    print new_df.to_string(index=False) 
+    print ("THIS IS THE NEW DATABASE:")
+    print (new_df.to_string(index=False) )
 
 if __name__ == '__main__':
     main()
-
-

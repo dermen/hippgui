@@ -3,10 +3,12 @@ import sys
 import re
 try:
     import Tkinter as tk
+    import ttk
+    import tkFileDialog
 except ImportError:
     import tkinter as tk
-import ttk
-import tkFileDialog
+    from tkinter import ttk
+    from tkinter import filedialog as tkFileDialog
 
 import numpy as np
 import pandas
@@ -21,6 +23,7 @@ import gui_merger
 class App:
     def __init__ (self, master):
         self.master = master
+        self.hippnet_data = None
 
 #       make main frame
         self.main_frame = tk.Frame(self.master, width=700, height=400)
@@ -226,6 +229,8 @@ class App:
             print("Not in CSV format either... exiting..")
             sys.exit()
         """
+        if self.hippnet_data is None:
+            return
         self.datatype = self.hippnet_data.dtypes
         
         #self.datatype, self.hippnet_data = helper.mysql_to_dataframe(self.mysql_database, 
@@ -377,7 +382,7 @@ class App:
             if col == '*MISSING*':
                 return
             else:
-                print "\n\n\n",col
+                print ("\n\n\n",col)
                 data = self.hippnet_data[col]
                 lines = map(str, data.tolist())
                 view_win = tk.Toplevel()

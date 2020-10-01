@@ -8,7 +8,7 @@ import pandas
 import numpy as np
 
 def test_connection(host, user, password):
-    print host, user, password
+    print (host, user, password)
     try:
         pymysql.connect(host=host, user=user, password=password)
         connected = True

@@ -1,9 +1,10 @@
 import os
 try:
     import Tkinter as tk
+    import tkFileDialog
 except ImportError:
     import tkinter as tk
-import tkFileDialog
+    from tkinter import filedialog as tkFileDialog
 
 import pandas
 
