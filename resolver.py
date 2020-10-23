@@ -4,6 +4,7 @@ except ImportError:
     import tkinter as tk
 
 import pandas
+import numpy as np
 
 import database_edit
 from helper import ScrollList
@@ -106,14 +107,13 @@ class ResolveData(tk.Frame):
             column and store them in a dict"""
         self.unique_vals = {}
         
-        where_ = pandas.np.where
         df_col = self.df[self.col]
         u_vals = pandas.unique( df_col[ df_col.notnull() ] )
         
         for val in u_vals:
-            self.unique_vals[val] = where_( df_col==val)[0]
+            self.unique_vals[val] = np.where( df_col==val)[0]
    
-        null_inds = where_(self.df.isnull()[self.col]) [0]
+        null_inds = np.where(self.df.isnull()[self.col]) [0]
         if null_inds.size:
             self.unique_vals['NULL__'] = null_inds 
 

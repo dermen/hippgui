@@ -6,6 +6,11 @@ except ImportError:
 
 import pandas
 import numpy as np
+from difflib import SequenceMatcher
+
+
+def how_similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 def test_connection(host, user, password):
     print (host, user, password)
@@ -64,12 +69,12 @@ def mysql_to_dataframe( db_name , table_name, host='localhost', user='root', pas
 
     dataframe  = pandas.DataFrame( data = col_data , columns = col_names)
    
-    for col,t in datatypes.iteritems():
+    for col,t in datatypes.items():
         to_convert = dataframe[col].notnull()
         if t == str:
-            dataframe.ix[ to_convert, col] = dataframe.ix[to_convert,col ].map( lambda x: x.decode( encoding='ascii', errors='ignore'))
+            dataframe.loc[ to_convert, col] = dataframe.loc[to_convert,col ].map( lambda x: x.decode( encoding='ascii', errors='ignore'))
         elif not t:
-            dataframe.ix[ to_convert, col] = dataframe.ix[to_convert,col ].map( lambda x: x.decode( encoding='ascii', errors='ignore'))
+            dataframe.loc[ to_convert, col] = dataframe.loc[to_convert,col ].map( lambda x: x.decode( encoding='ascii', errors='ignore'))
 
     return datatypes, dataframe 
 
@@ -153,7 +158,7 @@ def get_ctfs_col_info():
         'habitat': 'Habitat column',
         'dist_to_nail': 'Distance from the nail to the measuring point as efined in the HIPPNET manual.'}
 
-    return np.array( data.items() )
+    return np.array( list(data.items()) )
 
 
 class ScrollList(tk.Frame):

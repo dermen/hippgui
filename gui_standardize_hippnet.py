@@ -1,5 +1,4 @@
 import os
-import sys
 import re
 try:
     import Tkinter as tk
@@ -36,7 +35,7 @@ class App:
                             'foreground':'white','relief':tk.RIDGE }
 
 
-        self._mysql_connect()
+        #self._mysql_connect()
 
 #       get the databases from mysql
 
@@ -53,7 +52,7 @@ class App:
 
         tk.Label(self.login_win, text="Host:").grid(row=0,column=0)
         self.host_entry = tk.Entry(self.login_win)
-        self.host_entry.grid(row=0,column=1)
+        self.host_entry.grid(row=0, column=1)
         
         tk.Label(self.login_win, text="Username:").grid(row=1,column=0)
         self.user_entry = tk.Entry(self.login_win)
@@ -382,7 +381,7 @@ class App:
             if col == '*MISSING*':
                 return
             else:
-                print ("\n\n\n",col)
+                print("\n\n\n", col)
                 data = self.hippnet_data[col]
                 lines = map(str, data.tolist())
                 view_win = tk.Toplevel()
@@ -415,8 +414,9 @@ class App:
             else:
                 tk.Label( master=self.colWin, text=n, relief=tk.RIDGE, width=15).grid(row=i+1, column=0)
             tk.Label( master=self.colWin, text=d, relief=tk.RIDGE, width=60).grid(row=i+1, column=1)
-            col_choices = ['*MISSING*']+ self.hippnet_col_names
-            
+            col_choices = ['*MISSING*'] + self.hippnet_col_names
+            col_choices = sorted(col_choices, key=lambda x: helper.how_similar(x.lower(), n))[::-1]
+
             tk.Button( self.colWin, textvariable=self.matches[i], \
                 command=lambda x=(i,col_choices):CMD_select_col(x)).grid(row=i+1, column=2)
             tk.Button( self.colWin, text='view', \
@@ -426,7 +426,7 @@ class App:
         def CMD_colSelect(): 
             matched_cols = { self.ctfs_names[i]:m.get()  for i,m in enumerate(self.matches) }
             
-            for ctfs_name, curr_name in matched_cols.iteritems():
+            for ctfs_name, curr_name in matched_cols.items():
                 if ctfs_name != curr_name and ctfs_name in self.hippnet_data:
                     new_name = ctfs_name
                     while new_name in self.hippnet_data:
@@ -447,8 +447,8 @@ class App:
             #bad_dates = DT.values==np.datetime64( 'NaT')
 
 #           ~~~~ SPECIES ~~~
-            self.hippnet_data.ix[ nn['sp'], 'sp'] = \
-                self.hippnet_data.ix[ nn['sp'],'sp'].map( lambda x:x.upper() )
+            self.hippnet_data.loc[ nn['sp'], 'sp'] = \
+                self.hippnet_data.loc[ nn['sp'],'sp'].map( lambda x:x.upper() )
 
 #           ~~~~ DATE ~~~
             #datetime_stamp = pandas.DatetimeIndex( self.hippnet_data ['ExactDate'],
@@ -459,10 +459,10 @@ class App:
             self.hippnet_data ['date'] = datetime_stamp.to_julian_date()
 
 #           ~~~ GPS ~~~~
-            self.hippnet_data.ix[nn['x'], 'gx']  = \
-                np.round(self.hippnet_data.ix[nn['x'],'x'] - self.censusx0000, decimals=3)
-            self.hippnet_data.ix[nn['y'], 'gy']  = \
-                np.round(self.hippnet_data.ix[nn['y'],'y'] - self.censusy0000, decimals=3)
+            self.hippnet_data.loc[nn['x'], 'gx']  = \
+                np.round(self.hippnet_data.loc[nn['x'],'x'] - self.censusx0000, decimals=3)
+            self.hippnet_data.loc[nn['y'], 'gy']  = \
+                np.round(self.hippnet_data.loc[nn['y'],'y'] - self.censusy0000, decimals=3)
 #           ~~~ NULL columns which are required for CTFS formatting but dont apply to HIPPNET data 
             self.hippnet_data ['StemTag']  = np.nan
             self.hippnet_data ['stemID'] = np.nan
@@ -472,8 +472,8 @@ class App:
             self.hippnet_data ['CensusID'] = self.censusID 
 #           ~~~~ POINT OF MEASUREMENT related ~~~~~
             if matched_cols['pom'] != '*MISSING*':
-                self.hippnet_data.ix[nn['pom'], 'hom'] = \
-                    self.hippnet_data.ix[nn['pom'], 'pom'].map(lambda x:'%.2f'%x)
+                self.hippnet_data.loc[nn['pom'], 'hom'] = \
+                    self.hippnet_data.loc[nn['pom'], 'pom'].map(lambda x:'%.2f'%x)
             else:
                 self.hippnet_data[ 'pom'] = np.nan 
                 self.hippnet_data[ 'hom'] = np.nan 
@@ -526,11 +526,17 @@ class App:
         
         self.statusWin = tk.Toplevel()
         self.unique_status = {  stat:tk.StringVar() for stat 
-                in  set( self.hippnet_data.ix[self.hippnet_data.notnull()['RawStatus'],'RawStatus'])  }
+                in  set( self.hippnet_data.loc[self.hippnet_data.notnull()['RawStatus'],'RawStatus'])  }
     
         # set default values
         for stat in self.unique_status:
-            self.unique_status[stat].set( "alive" )
+            print("UNIQUE %s" % stat)
+            if helper.how_similar(stat, "missing") > 0.5:
+                self.unique_status[stat].set("missing")
+            elif helper.how_similar(stat, "dead") > 0.5:
+                self.unique_status[stat].set("dead")
+            else:
+                self.unique_status[stat].set("alive")
 
         dfstat = [ 'alive', 'dead', 'missing', 'gone' ]
         
@@ -557,8 +563,8 @@ class App:
                 self.hippnet_data.replace( to_replace={'RawStatus': self.RawStatus_map} , inplace=True )
             
             # make the status column as well, which is an abbeviated DFstatus column
-            stat_dat = self.hippnet_data.ix[self.hippnet_data.notnull()['RawStatus'], 'DFstatus'].map(lambda x:x.upper()[0])
-            self.hippnet_data.ix[self.hippnet_data.notnull()['RawStatus'], 'status'] = stat_dat
+            stat_dat = self.hippnet_data.loc[self.hippnet_data.notnull()['RawStatus'], 'DFstatus'].map(lambda x:x.upper()[0])
+            self.hippnet_data.loc[self.hippnet_data.notnull()['RawStatus'], 'status'] = stat_dat
             self.statusWin.destroy() 
             
             self.StatusResolved['done'] = True
@@ -590,7 +596,7 @@ class App:
         self.resolver.pack(side=tk.TOP, fill=tk.BOTH,expand=tk.YES)# fill=tk.BOTH)
         bframe = tk.Frame(self.res_win, bd=3, relief=tk.RIDGE)
         bframe.pack(side=tk.TOP,fill=tk.BOTH,expand=tk.YES)
-        b = tk.Button(bframe, text='Exit', command=self._exit_resolve, bd=4, relief=tk.RAISED)
+        b = tk.Button(bframe, text='Exit/Done', command=self._exit_resolve, bd=4, relief=tk.RAISED)
         b.pack( side=tk.LEFT, fill=tk.BOTH)
     
     def _exit_resolve(self):
@@ -620,7 +626,7 @@ class App:
         lab.grid(row=0)
         
         #column_list = sorted( column_list)
-        self.col_vars = { col:tk.IntVar() for col in column_list }
+        self.col_vars = {col: tk.IntVar() for col in column_list }
         for i,col in enumerate( self.col_vars ):
             cb = tk.Checkbutton(self.winCanvasFrame, text=col, variable=self.col_vars[ col ] ).grid( row = i+1, sticky=tk.W )
 
@@ -645,7 +651,9 @@ class App:
             return
         self.multiStemWin = tk.Toplevel()
         self.multi_stem_names = []
-        self.selectColFromList( self.multiStemWin, list(self.hippnet_data), self.multiStemCloser, self.multi_stem_names )
+        all_col_names = list(self.hippnet_data)
+        all_col_names = sorted(all_col_names, key=lambda x: helper.how_similar(x.lower(), "ms"))[::-1]
+        self.selectColFromList( self.multiStemWin, all_col_names, self.multiStemCloser, self.multi_stem_names )
         
     def multiStemCloser( self) :
         self.MultiStemSelected['done'] = True
@@ -843,9 +851,9 @@ class App:
                     'hom': float,
                     'pom':str}
         
-        for col,t in newtypes.iteritems():
+        for col,t in newtypes.items():
             to_convert = self.hippnet_data[col].notnull()
-            self.hippnet_data.ix[ to_convert, col] = self.hippnet_data.ix[to_convert,col ].astype(t)
+            self.hippnet_data.loc[ to_convert, col] = self.hippnet_data.loc[to_convert,col ].astype(t)
 
         output_cols  = [ col for col in self.ctfs_names if col in list(self.hippnet_data) ]
         output_cols += mstem_cols
@@ -855,23 +863,28 @@ class App:
 
         self.saveWin = tk.Toplevel()
         self.saveWin.title('Save')
-        tk.Label(self.saveWin,text='Enter an output filename:', **self.LabelOpts).grid(row=0,column=0)
+        tk.Label(self.saveWin,text='Output filename prefix:', **self.LabelOpts).grid(row=0,column=0)
         self.saveEntry = tk.Entry(self.saveWin)
         self.saveEntry.grid(row=0,column=2)
+        self.saveEntry.set("hipp_data")
         
         tk.Label( self.saveWin, text='Select Format' , **self.LabelOpts ).grid(row=1,column=0 )
         self.xlsx_var = tk.IntVar()
         self.pkl_var = tk.IntVar()
+        self.tsv_var = tk.IntVar()
         self.xlsx_cb = tk.Checkbutton(self.saveWin, text='xlsx', variable = self.xlsx_var )
         self.xlsx_cb.grid(row=1,column=1)
         self.pkl_cb = tk.Checkbutton(self.saveWin, text='pkl', variable = self.pkl_var )
         self.pkl_cb.grid(row=1,column=2)
+        self.tsv_cb = tk.Checkbutton(self.saveWin, text='tsv', variable = self.tsv_var )
+        self.tsv_cb.grid(row=1,column=3)
 
         def CMD_save():
             saveName = self.saveEntry.get()
             outfile_xlsx = os.path.join( self.saveDir , '%s.xlsx'%saveName )
             outfile_pkl = os.path.join( self.saveDir , '%s.pkl'%saveName )
-            
+            outfile_tsv = os.path.join( self.saveDir , '%s.tsv'%saveName )
+
             
             if self.xlsx_var.get():
                 try:
@@ -883,6 +896,8 @@ class App:
                     tk.Button(errorWin, text='Ok', command=errorWin.destroy ).grid(row=1)
             if self.pkl_var.get():
                 self.hippnet_data.to_pickle(outfile_pkl)
+            if self.tsv_var.get():
+                self.hippnet_data.to_csv(outfile_tsv, sep="\t", float_format="%.2f", na_rep='NA', index=False)
             
             self.container_frame.destroy()
             self.saveWin.destroy()

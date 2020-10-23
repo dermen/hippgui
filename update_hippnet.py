@@ -1,11 +1,11 @@
-# coding: utf-8
+
 import pandas
 import numpy as np
 
 
 def recompute_gx_gy(df, cornerVar):
     """
-    If mergine a different census
+    If merging a different census
     it might be important to recompute
     the gx and gy values as they are rounded
     from the never-changing x,y coords
@@ -129,8 +129,8 @@ for i_df,i_cens in enumerate(u_id):
         while 1: #usr_reply != "OK":
             print("\n#######################")
             print("Unique values in %s col:" % col)
-            print d_final[col].unique()
-            usr_reply = raw_input("To edit a value please enter OLD,NEW  or press ENTER to proceed: \n" )
+            print (d_final[col].unique())
+            usr_reply = input("To edit a value please enter OLD,NEW  or press ENTER to proceed: \n" )
             if usr_reply == "":
                 break
             else:
@@ -138,9 +138,9 @@ for i_df,i_cens in enumerate(u_id):
                 old_val = old_val.strip()
                 new_val = new_val.strip()
                 print("For col %s I will replace all instances of %s with %s" % (col, old_val, new_val))
-                ok = raw_input("Ok ? (y,n)" )
+                ok = input("Ok ? (y,n)" )
                 while ok not in ["y", "n"]:
-                    ok = raw_input("Ok ? (y,n)" )
+                    ok = input("Ok ? (y,n)" )
                 if ok == 'y':
                     d_final.loc[ d_final[col] == old_val, col] = new_val 
                 break
@@ -164,7 +164,6 @@ for i_df,i_cens in enumerate(u_id):
     new_files.append( updated_census_pkl)
     d_final.to_pickle( updated_census_pkl)
     print("Wrote updated file %s" % updated_census_pkl)
-    print
 
 #new_pkl = "%s_%d.pkl"%(name,i_cens+1) 
 #d_new.to_pickle( new_pkl)
@@ -172,11 +171,11 @@ for i_df,i_cens in enumerate(u_id):
 
 print("Please now run the merger with the newly created files!")
 for f in new_files:
-    print f
+    print(f)
 
 print("And please check these files for fixes")
 for f in fix_files:
-    print f
+    print(f)
 print("Mahalo.")
 
 

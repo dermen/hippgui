@@ -47,7 +47,7 @@ class EditorApp( tk.Frame ):
         self.rowmap =  { i:row for i,row in enumerate(self.dat_rows ) }
 
 #       subset the data and convert to giant list of strings (rows) for viewing
-        self.sub_data = self.df.ix[ self.dat_rows, self.dat_cols  ]
+        self.sub_data = self.df.loc[ self.dat_rows, self.dat_cols  ]
 
         #### 
         self.sub_datstring = self.sub_data.to_string(index=False, col_space=13, 
@@ -148,7 +148,7 @@ class EditorApp( tk.Frame ):
         items = self.lb.curselection()
         if items:
             new_item = items[-1]
-            dataVal = str( self.df.ix[self.rowmap[new_item], self.opt_var2.get()] )
+            dataVal = str( self.df.loc[self.rowmap[new_item], self.opt_var2.get()] )
             self.entry_box_old.config( state=tk.NORMAL)
             self.entry_box_old.delete(0,tk.END)
             self.entry_box_old.insert(0, dataVal)
@@ -315,7 +315,7 @@ class EditorApp( tk.Frame ):
                 val_type = self.df.dtypes[ updated_vals['col'] ]
                 val_as_type = pandas.np.array( [val], dtype=val_type)[0]
                 #self.df.set_value(self.row, updated_vals['col'] , val_as_type )
-                self.df.ix[ self.row, updated_vals['col']] = val_as_type
+                self.df.loc[ self.row, updated_vals['col']] = val_as_type
                 self._rewrite()
             self.sync_subdata()
 
@@ -341,7 +341,7 @@ class EditorApp( tk.Frame ):
         try: 
             new_val_type = self.df.dtypes[ self.col]
             new_val = pandas.np.array( [self.entry_box_new.get()], dtype=new_val_type)[0]
-            self.df.ix[self.row,self.col] = new_val
+            self.df.loc[self.row,self.col] = new_val
             #self.df.set_value( self.row, self.col, new_val )
         except ValueError:
             self.errmsg('Invalid entry `%s` for column `%s`!'%(self.entry_box_new.get(), self.col ) ) 
@@ -354,7 +354,7 @@ class EditorApp( tk.Frame ):
 
     def _track(self):
         """record a change to the database"""
-        self.prev_vals['vals'][self.idx] = str( self.df.ix[ self.row, self.col ] ) 
+        self.prev_vals['vals'][self.idx] = str( self.df.loc[ self.row, self.col ] )
 
     def _update_hist_tracker( self):
         """ record latest changes to database"""
@@ -362,7 +362,7 @@ class EditorApp( tk.Frame ):
 
     def sync_subdata( self):
         """ syncs subdata with data"""
-        self.sub_data = self.df.ix[ self.dat_rows, self.dat_cols  ]
+        self.sub_data = self.df.loc[ self.dat_rows, self.dat_cols  ]
 
     def _delete_items(self, items):
         for i in items:
@@ -395,7 +395,7 @@ class EditorApp( tk.Frame ):
     def _rewrite(self): 
         """ re-writing the dataframe string in the listbox"""
         new_col_vals = self.df.iloc[ self.row].tolist()
-        #new_col_vals    = [ self.df.ix[ self.row , col ] for col in self.dat_cols]
+        #new_col_vals    = [ self.df.loc[ self.row , col ] for col in self.dat_cols]
         
         new_col_val_str = [ str(val) for val in new_col_vals]
         new_line        = self._make_line( new_col_val_str )
@@ -434,7 +434,7 @@ class EditorApp( tk.Frame ):
 
 def main():
 #   make a test dataframe here of integers, can be anything really
-    df = pandas.DataFrame(pandas.np.random.random((1000, 20)), columns=['col_%d'%x for x in xrange( 20 ) ] ) 
+    df = pandas.DataFrame(pandas.np.random.random((1000, 20)), columns=['col_%d'%x for x in range( 20 ) ] )
 
 #   start
     root       = tk.Tk()

@@ -46,7 +46,7 @@ def addDBH_NA( dataframe, maxDBH):
     while thisMaxDBH < maxDBH:
         thisMaxDBH += 1
         new_col = 'dbh_%d'%(thisMaxDBH)
-        dataframe.ix[:, new_col] = pandas.np.nan
+        dataframe.loc[:, new_col] = pandas.np.nan
     return 
 
 def assert_not_null(df, cols=['gx','gy','tag','RawStatus', 'status','DFstatus']):
@@ -66,7 +66,7 @@ class GroupRows:
         self.dfs_j = dfs_j.copy()
         self.loc_col = loc_col
 
-        self.group_colors = itertools.cycle( 'gray%d'%x for x in xrange( 60,70) )
+        self.group_colors = itertools.cycle( 'gray%d'%x for x in range( 60,70) )
 
         self.grouped_items = []
         self.group_names = self.dfs_j[self.loc_col].tolist()
@@ -106,7 +106,7 @@ class GroupRows:
         
         if items and not items_already_grouped:
             rows = [ self.row_map[i] for i in items ] 
-            group = self.dupes_df.ix[ rows, ]
+            group = self.dupes_df.loc[ rows, ]
 
             new_loc = str(self.new_loc_counter)
             while new_loc in self.group_names:
@@ -114,7 +114,7 @@ class GroupRows:
                 new_loc = str(self.new_loc_counter)
             self.group_names.append( new_loc)
             index = group.index.values 
-            self.dfs_j.ix[index,self.loc_col] = new_loc 
+            self.dfs_j.loc[index,self.loc_col] = new_loc
             for i in items:
                 self.data_lb.itemconfig(i, {'bg':'black'}) #,'fg':'white'} ) 
                 self.data_lb.selection_clear(i)
@@ -125,10 +125,10 @@ class GroupRows:
 
     def _group_done(self):
         if self.delete_var.get():
-            remaining_items = [ i for i in xrange(self.data_lb.size()) if int(i) not in self.grouped_items ]
+            remaining_items = [ i for i in range(self.data_lb.size()) if int(i) not in self.grouped_items ]
             remaining_rows = [ self.row_map[i] for i in remaining_items]
             for row in remaining_rows:
-                group = self.dupes_df.ix[ [row], ]
+                group = self.dupes_df.loc[ [row], ]
                 index = group.index.values 
                 self.dfs_j.drop(index, inplace=True)
         self.master.destroy()
@@ -263,7 +263,7 @@ class Merge:
         print("Assiging unique tree ID based on tag and position...")
         treeID_map = { loc:i for i,loc in enumerate(pandas.unique(self.dfs_j[self.loc_col])) }
         treeID     = [ treeID_map[l] for l in self.dfs_j[self.loc_col] ]
-        self.dfs_j.ix[:,'treeID'] = treeID
+        self.dfs_j.loc[:,'treeID'] = treeID
         print("\tDone.")
 
 
@@ -271,8 +271,8 @@ class Merge:
         """rename dbh main stem col"""
         print("Renaming DBH columns for melted format...")
         self.dfs_j.rename( columns={'dbh':'dbh_0'}, inplace=True)
-        self.dbh_cols = ['dbh_%d'%x for x in xrange(self.max_stems)] # colums corresponding to the dbh values
-        self.dfs_j    = self.dfs_j.ix[:, [c for c in list(self.dfs_j) if c not in self.dbh_cols] + self.dbh_cols] # rearrange the column order for cleanliness
+        self.dbh_cols = ['dbh_%d'%x for x in range(self.max_stems)] # colums corresponding to the dbh values
+        self.dfs_j    = self.dfs_j.loc[:, [c for c in list(self.dfs_j) if c not in self.dbh_cols] + self.dbh_cols] # rearrange the column order for cleanliness
         print("\tDone.")
 
     def _nostems_correction(self):
@@ -282,11 +282,11 @@ class Merge:
         self.dfs_j.replace(to_replace={c:dbh_na_map for c in self.dbh_cols}, inplace=True)
 
 #       sort the dbh vals so NaN vals are at the end 
-        self.dfs_j.ix[:,['dbh_%d'%x for x in xrange(1,self.max_stems)]] = np.sort( self.dfs_j.ix[:,['dbh_%d'%x for x in xrange(1,self.max_stems)]].values, axis=1)
+        self.dfs_j.loc[:,['dbh_%d'%x for x in range(1,self.max_stems)]] = np.sort( self.dfs_j.loc[:,['dbh_%d'%x for x in range(1,self.max_stems)]].values, axis=1)
 #       number of recorded stems dbh values VS the number recorded in the 'nostems' columns
-        nostems_actual = self.dfs_j.ix[:,self.dbh_cols].notnull().sum(axis=1)
-        print( self.dfs_j.ix[:,self.dbh_cols].notnull() )
-        print( self.dfs_j.ix[:,self.dbh_cols].notnull() )
+        nostems_actual = self.dfs_j.loc[:,self.dbh_cols].notnull().sum(axis=1)
+        print( self.dfs_j.loc[:,self.dbh_cols].notnull() )
+        print( self.dfs_j.loc[:,self.dbh_cols].notnull() )
         nostems_err_inds = np.where( nostems_actual != self.dfs_j.nostems )[0]
         
         if nostems_err_inds.size:
@@ -300,7 +300,7 @@ class Merge:
         """list xy duplicates per census"""
         print("Listing xy duplicates.. ")
         xy_groups      = self.dfs_j.groupby(['CensusID','gx','gy'])
-        xy_dupe_inds   = [inds for group,inds in xy_groups.groups.iteritems() if len(inds) > 1 ]
+        xy_dupe_inds   = [inds for group,inds in xy_groups.groups.items() if len(inds) > 1 ]
         if xy_dupe_inds:
             xy_dupe_inds   = [i for sublist in xy_dupe_inds for i in sublist] # 2d to 1d
             subdata     = self.dfs_j.iloc[xy_dupe_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
@@ -313,10 +313,10 @@ class Merge:
         """list tag duplicates per census"""
         print("Listing tag duplicates")
         tag_groups      = self.dfs_j.groupby(['CensusID','tag'])
-        tag_dupe_inds   = [inds for group,inds in tag_groups.groups.iteritems() if len(inds) > 1 ]
+        tag_dupe_inds   = [inds for group,inds in tag_groups.groups.items() if len(inds) > 1 ]
         if tag_dupe_inds:
             tag_dupe_inds   = [i for sublist in tag_dupe_inds for i in sublist] # 2d to 1d
-            subdata     = self.dfs_j.ix[tag_dupe_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
+            subdata     = self.dfs_j.loc[tag_dupe_inds].reset_index().set_index(['CensusID','index']).sortlevel(0)
             if self.writer:
                 subdata.to_excel( self.writer, 'tag_duplicates', float_format='%.2f' , na_rep='NA') 
         print("\tDone.")
@@ -329,7 +329,7 @@ class Merge:
         """list tags that change across censuses"""
         print("Trees where tags have changed...")
         tags_per_treeID = self.id_groups['tag'].unique()
-        tags_changed = [ treeID for treeID,tags in tags_per_treeID.iteritems() if len(tags) > 1 ]
+        tags_changed = [ treeID for treeID,tags in tags_per_treeID.items() if len(tags) > 1 ]
         if tags_changed:
             subdata = pandas.concat([ self.id_groups.get_group(treeID) for treeID in tags_changed], keys=tags_changed )
             if self.writer:
@@ -402,15 +402,15 @@ class Merge:
         """find and correct species that change across censuses"""
         print("Where has the species changed; will use most recent assigned species//")
         sp_per_treeID = self.id_groups['sp'].unique()
-        sp_changed = [ treeID for treeID,sp_vals in sp_per_treeID.iteritems() if len(sp_vals) > 1 ]
+        sp_changed = [ treeID for treeID,sp_vals in sp_per_treeID.items() if len(sp_vals) > 1 ]
         if sp_changed:
             subdata = pandas.concat([ self.id_groups.get_group(treeID) for treeID in sp_changed], keys=sp_changed )
             if self.writer:
                 subdata.to_excel( self.writer, 'sp_changed', float_format='%.2f' , na_rep='NA') 
             for treeID in sp_changed:
                 group = self.id_groups.get_group(treeID)
-                recent_sp = group.ix[ np.argmax(group.CensusID), 'sp']
-                self.dfs_j.ix[group.index.tolist(),'sp' ] = recent_sp
+                recent_sp = group.loc[ np.argmax(group.CensusID), 'sp']
+                self.dfs_j.loc[group.index.tolist(),'sp' ] = recent_sp
         print("\tDone.")
     
     
@@ -464,7 +464,7 @@ class Merge:
             melted_data.append(melted)
 
         self.tidy_data = pandas.concat( melted_data, ignore_index=True)
-        self.tidy_data.ix[:,'mstem'] = self.tidy_data.ix[:,'mstem'].map( lambda x:x.split('_')[-1] )
+        self.tidy_data.loc[:,'mstem'] = self.tidy_data.loc[:,'mstem'].map( lambda x:x.split('_')[-1] )
     
         self.tidy_data = self.tidy_data.sort_index(by=['treeID','CensusID'])
         print("\tDone.")
