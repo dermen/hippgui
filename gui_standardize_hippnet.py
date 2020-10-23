@@ -45,6 +45,18 @@ class App:
         self._make_main_frame_lab_text()
         self._make_widget_container()
         self._layout()
+        self._create_app_dir()
+        self._col_sel_filename = "colSelect_matches.npy"
+
+    def _create_app_dir(self):
+        self._app_dir = None
+        try:
+            self._app_dir = os.path.join(os.getenv("LOCALAPPDATA"), "STANDARDIZE_HIPPNET")
+            if not os.path.exists(self._app_dir):
+                os.makedirs(self._app_dir)
+        except Exception as err:
+            print("Could not create the application directors. Error:\n%s" % err)
+            pass
 
     def _mysql_connect(self):
         self.login_win = tk.Toplevel()
@@ -293,12 +305,14 @@ class App:
                 try:
                     self.censusx0000 = float( self.x_entry.get() )
                 except ValueError:
-                    self.x_entry.set('Enter a number')
+                    self.x_entry.delete(0, tk.END)
+                    self.x_entry.insert(0, 'Enter a number')
                     return
                 try:
                     self.censusy0000 =float( self.y_entry.get() ) 
                 except ValueError:
-                    self.y_entry.set('Enter a number')
+                    self.y_entry.delete(0, tk.END)
+                    self.y_entry.insert(0, 'Enter a number')
                     return
                 self.cornerFrame.destroy()
                 self.PlotCornerSet['done'] = True
@@ -368,14 +382,17 @@ class App:
 
         # initialize each match as "missing"
         self.matches = [ tk.StringVar() for c in self.ctfs_names ]
-        if os.path.exists("colSelect_matches.npy"):
-            match_vals = np.load("colSelect_matches.npy")
-            for i,c in enumerate( self.ctfs_names) : # in self.matches:
-                self.matches[i].set(match_vals[i])
-        else:
-            for i,c in enumerate( self.ctfs_names) : # in self.matches:
-                self.matches[i].set('*MISSING*')
-        
+
+        for i, c in enumerate(self.ctfs_names):  # in self.matches:
+            self.matches[i].set('*MISSING*')
+
+        if self._app_dir is not None:
+            colsel_file = os.path.join(self._app_dir, self._col_sel_filename)
+            if os.path.exists(colsel_file):
+                match_vals = np.load(colsel_file)
+                for i, c in enumerate( self.ctfs_names):
+                    self.matches[i].set(match_vals[i])
+
         def CMD_view_col(match_var):
             col = match_var.get()
             if col == '*MISSING*':
@@ -386,7 +403,7 @@ class App:
                 lines = map(str, data.tolist())
                 view_win = tk.Toplevel()
                 view_win.title(col)
-                scroll_list = ScrollList(view_win) #, lines)
+                scroll_list = ScrollList(view_win)
                 scroll_list.fill(lines)
                 scroll_list.pack()
                 tk.Button( view_win,text='close',command=view_win.destroy ).pack()
@@ -487,8 +504,13 @@ class App:
             self.ColumnsMatched['done'] =True
             self.Text_ColSelect = 'Matched!'
             self._layout()        
-            
-            np.save("colSelect_matches", [m.get() for m in self.matches] )
+
+            if self._app_dir is not None:
+                try:
+                    colsel_file = os.path.join(self._app_dir, self._col_sel_filename)
+                    np.save(colsel_file, [m.get() for m in self.matches] )
+                except IOError:
+                    pass
 
         tk.Button(self.colWin, text='Done', foreground='white', background='darkgreen',
                 font='BOLD', command=CMD_colSelect, relief=tk.RAISED).grid(row=len(self.ctfs_names)+1, column = 1 )
@@ -710,7 +732,7 @@ class App:
                 mstem_from_notes[ not_mstem_condition ] = None
 
 #               max nomstem from main database
-                max_nomstem = len( filter( lambda x:re.match('dbh_',x), list(self.hippnet_data) )  )
+                max_nomstem = len( list(filter( lambda x:re.match('dbh_',x), list(self.hippnet_data) ) )  )
 
 #               create a mapping from mstem_from_notes series to a new dataframe, where the columns are the mstem dbh measurements
                 mstems_map = [ {'dbh_%d'%(i+max_nomstem+1):float(val) 
@@ -866,7 +888,8 @@ class App:
         tk.Label(self.saveWin,text='Output filename prefix:', **self.LabelOpts).grid(row=0,column=0)
         self.saveEntry = tk.Entry(self.saveWin)
         self.saveEntry.grid(row=0,column=2)
-        self.saveEntry.set("hipp_data")
+        self.saveEntry.delete(0, tk.END)
+        self.saveEntry.insert(0, "hipp_data")
         
         tk.Label( self.saveWin, text='Select Format' , **self.LabelOpts ).grid(row=1,column=0 )
         self.xlsx_var = tk.IntVar()
